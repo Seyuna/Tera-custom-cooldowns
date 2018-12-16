@@ -3,14 +3,14 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:controls="clr-namespace:TCC.Controls"
+        xmlns:settings="clr-namespace:TCC.Controls.Settings"
         SizeToContent="Height"
         mc:Ignorable="d"
          Style="{StaticResource BaseWindowStyle}" DataContext="{Binding DC, RelativeSource={RelativeSource Self}}"
         Title="TCC" Width="950" d:DataContext="{d:DesignData GroupConfigVM}">
     <Window.Resources>
         <Style TargetType="ListBox">
-            <Setter Property="ItemTemplate" Value="{StaticResource FixedSkillDataTemplate}"></Setter>
+            <Setter Property="ItemTemplate" Value="{StaticResource FixedSkillDataTemplateForConfig}"></Setter>
             <Setter Property="ItemContainerStyle" Value="{StaticResource DefaultListItemStyle}"></Setter>
             <Setter Property="Background" Value="#2000"></Setter>
             <Setter Property="BorderThickness" Value="0"></Setter>
@@ -41,8 +41,8 @@
             <TextBlock Text="Group members buffs settings" Style="{StaticResource DefaultTextStyle}"
                        Margin="36 0 0 0" VerticalAlignment="Center" HorizontalAlignment="Left"
                        FontSize="15" Foreground="#999" />
-            <controls:BoolSetting HorizontalAlignment="Right" Margin="0 0 36 0" VerticalAlignment="Center" SettingName="Show all" IsOn="{Binding ShowAll, Mode=TwoWay}">
-                <controls:BoolSetting.ToolTip>
+            <settings:BoolSetting HorizontalAlignment="Right" Margin="0 0 36 0" VerticalAlignment="Center" SettingName="Show all" IsOn="{Binding ShowAll, Mode=TwoWay}">
+                <settings:BoolSetting.ToolTip>
                 <ToolTip Background="Transparent" >
                     <Grid Margin="5">
                         <Border Style="{StaticResource DefaultBorderStyle}" Grid.RowSpan="2"/>
@@ -52,9 +52,9 @@
                         </TextBlock>
                     </Grid>
                 </ToolTip>
-                </controls:BoolSetting.ToolTip>
+                </settings:BoolSetting.ToolTip>
 
-            </controls:BoolSetting>
+            </settings:BoolSetting>
         </Grid>
 
 
@@ -102,14 +102,14 @@
                             <Button Click="FilterByClass" Opacity=".3" x:Name="Btn">
                                 <Rectangle>
                                     <Rectangle.OpacityMask>
-                                        <ImageBrush ImageSource="{Binding Converter={StaticResource Converters.ClassToImage}}" />
+                                        <ImageBrush ImageSource="{Binding Converter={StaticResource ClassToImageConverter}}" />
                                     </Rectangle.OpacityMask>
                                 </Rectangle>
                                 <Button.ToolTip>
                                     <ToolTip>
                                         <TextBlock>
                                             <Run>Display active buffs for</Run>
-                                            <Run Text="{Binding Converter={StaticResource Converters.ClassToName}, ConverterParameter=true, Mode=OneWay}"></Run>
+                                            <Run Text="{Binding Converter={StaticResource ClassToName}, ConverterParameter=true, Mode=OneWay}"></Run>
                                         </TextBlock>
                                     </ToolTip>
                                 </Button.ToolTip>
@@ -132,14 +132,15 @@
                      ScrollViewer.HorizontalScrollBarVisibility="Disabled" 
                      Height="500" ItemTemplate="{StaticResource GroupAbnormalitySelectorDataTemplate}"
                      AlternationCount="2" VirtualizingStackPanel.IsVirtualizing="True"  VirtualizingStackPanel.VirtualizationMode="Recycling"
-                     >
-                <ListBox.Resources>
-                    <Style TargetType="{x:Type ScrollBar}" BasedOn="{StaticResource NormalScrollBar}"></Style>
-                </ListBox.Resources>
+            >
             </ListBox>
+
             <Grid.LayoutTransform>
                 <ScaleTransform ScaleY="1"/>
             </Grid.LayoutTransform>
         </Grid>
     </Grid>
 </Window>
+
+
+

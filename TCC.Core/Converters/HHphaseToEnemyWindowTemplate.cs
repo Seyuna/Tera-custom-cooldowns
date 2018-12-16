@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Globalization;
-using System.Windows;
 using System.Windows.Data;
 using TCC.Data;
 
@@ -14,17 +13,9 @@ namespace TCC.Converters
             switch ((HarrowholdPhase)value)
             {
                 case HarrowholdPhase.Phase1:
-                    return Application.Current.FindResource("Phase1EnemyWindowLayout");
-                case HarrowholdPhase.Phase2:
-                    return Application.Current.FindResource("DefaultEnemyWindowLayout");
-                case HarrowholdPhase.Phase3:
-                    return Application.Current.FindResource("DefaultEnemyWindowLayout");
-                case HarrowholdPhase.Phase4:
-                    return Application.Current.FindResource("DefaultEnemyWindowLayout");
-                case HarrowholdPhase.Balistas:
-                    return Application.Current.FindResource("DefaultEnemyWindowLayout");
+                    return R.DataTemplates.Phase1EnemyWindowLayout; //Application.Current.FindResource("Phase1EnemyWindowLayout");
                 default:
-                    return Application.Current.FindResource("DefaultEnemyWindowLayout");
+                    return R.DataTemplates.DefaultEnemyWindowLayout; //Application.Current.FindResource("DefaultEnemyWindowLayout");
             }
         }
 

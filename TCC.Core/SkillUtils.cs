@@ -3,15 +3,15 @@ using System.Collections.Generic;
 using System.IO;
 using System.Xml.Linq;
 using TCC.Data;
-using TCC.Data.Databases;
+using TCC.Data.Skills;
 
 namespace TCC
 {
     public class SkillConfigParser
     {
-        public List<FixedSkillCooldown> Main;
-        public List<FixedSkillCooldown> Secondary;
-        public List<FixedSkillCooldown> Hidden;
+        public List<Cooldown> Main;
+        public List<Cooldown> Secondary;
+        public List<Cooldown> Hidden;
 
         private void ParseSkillConfig(string filename, Class c)
         {
@@ -33,13 +33,13 @@ namespace TCC
                                 switch (row)
                                 {
                                     case 1:
-                                        Main.Add(new FixedSkillCooldown(sk, false));
+                                        Main.Add(new Cooldown(sk, false));
                                         break;
                                     case 2:
-                                        Secondary.Add(new FixedSkillCooldown(sk, false));
+                                        Secondary.Add(new Cooldown(sk, false));
                                         break;
                                     case 3:
-                                        Hidden.Add(new FixedSkillCooldown(sk, false));
+                                        Hidden.Add(new Cooldown(sk, false));
                                         break;
                                 }
                             }
@@ -52,13 +52,13 @@ namespace TCC
                                 switch (row)
                                 {
                                     case 1:
-                                        Main.Add(new FixedSkillCooldown(sk, false, CooldownType.Item));
+                                        Main.Add(new Cooldown(sk, false, CooldownType.Item));
                                         break;
                                     case 2:
-                                        Secondary.Add(new FixedSkillCooldown(sk, false, CooldownType.Item));
+                                        Secondary.Add(new Cooldown(sk, false, CooldownType.Item));
                                         break;
                                     case 3:
-                                        Hidden.Add(new FixedSkillCooldown(sk, false, CooldownType.Item));
+                                        Hidden.Add(new Cooldown(sk, false, CooldownType.Item));
                                         break;
                                 }
                             }
@@ -69,17 +69,17 @@ namespace TCC
                             if (SessionManager.AbnormalityDatabase.Abnormalities.TryGetValue(skillId, out var ab))
                             {
                                 var sk = new Skill(ab.Id, Class.None, ab.Name, ab.ToolTip) { IconName = ab.IconName };
-                                PassivityDatabase.Passivities.Add(ab.Id);
+                                //PassivityDatabase.Passivities.Add(ab.Id);
                                 switch (row)
                                 {
                                     case 1:
-                                        Main.Add(     new FixedSkillCooldown(sk, false, CooldownType.Passive));
+                                        Main.Add(     new Cooldown(sk, false, CooldownType.Passive));
                                         break;                                   
                                     case 2:                                      
-                                        Secondary.Add(new FixedSkillCooldown(sk, false, CooldownType.Passive));
+                                        Secondary.Add(new Cooldown(sk, false, CooldownType.Passive));
                                         break;                                   
                                     case 3:                                      
-                                        Hidden.Add(   new FixedSkillCooldown(sk, false, CooldownType.Passive));
+                                        Hidden.Add(   new Cooldown(sk, false, CooldownType.Passive));
                                         break;
                                 }
                             }
@@ -92,9 +92,9 @@ namespace TCC
 
         public SkillConfigParser(string filename, Class c)
         {
-            Main = new List<FixedSkillCooldown>();
-            Secondary = new List<FixedSkillCooldown>();
-            Hidden = new List<FixedSkillCooldown>();
+            Main = new List<Cooldown>();
+            Secondary = new List<Cooldown>();
+            Hidden = new List<Cooldown>();
             ParseSkillConfig(filename, c);
         }
     }
@@ -150,7 +150,7 @@ namespace TCC
                     break;
             }
         }
-
+        //TODO: update these
         private static void BuildDefaultValkyrieSkillConfig(string filename)
         {
             var skills = new XElement("Skills",

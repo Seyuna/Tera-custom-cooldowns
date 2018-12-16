@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using TCC.Data;
 using TCC.Parsing.Messages;
 using TCC.ViewModels;
 
@@ -9,7 +10,7 @@ namespace TCC.ClassSpecific
         private static readonly uint[] EnergyStarsIDs = { 801500, 801501, 801502, 801503, 98000107 };
         private static readonly int GraceId = 801700;
         private static readonly int TripleNemesisId = 28090;
-        private static readonly uint[] EdictIDs = { 805800, 805801, 805802, 805803 };
+        private static readonly uint[] EdictIDs = { 805800 };
 
         private static void CheckTripleNemesis(S_ABNORMALITY_BEGIN p)
         {
@@ -46,13 +47,13 @@ namespace TCC.ClassSpecific
         private static void CheckEnergyStars(S_ABNORMALITY_REFRESH p)
         {
             if (!EnergyStarsIDs.Contains(p.AbnormalityId)) return;
-            ((PriestBarManager)ClassWindowViewModel.Instance.CurrentManager).EnergyStars.Buff.Refresh(p.Duration);
+            ((PriestBarManager)ClassWindowViewModel.Instance.CurrentManager).EnergyStars.Buff.Refresh(p.Duration, CooldownMode.Normal);
 
         }
         private static void CheckEnergyStars(S_ABNORMALITY_END p)
         {
             if (!EnergyStarsIDs.Contains(p.AbnormalityId)) return;
-            ((PriestBarManager)ClassWindowViewModel.Instance.CurrentManager).EnergyStars.Buff.Refresh(0);
+            ((PriestBarManager)ClassWindowViewModel.Instance.CurrentManager).EnergyStars.Buff.Refresh(0, CooldownMode.Normal);
         }
 
         private static void CheckGrace(S_ABNORMALITY_BEGIN p)
@@ -63,12 +64,12 @@ namespace TCC.ClassSpecific
         private static void CheckGrace(S_ABNORMALITY_REFRESH p)
         {
             if (p.AbnormalityId != GraceId) return;
-            ((PriestBarManager)ClassWindowViewModel.Instance.CurrentManager).Grace.Buff.Refresh(p.Duration);
+            ((PriestBarManager)ClassWindowViewModel.Instance.CurrentManager).Grace.Buff.Refresh(p.Duration, CooldownMode.Normal);
         }
         private static void CheckGrace(S_ABNORMALITY_END p)
         {
             if (p.AbnormalityId != GraceId) return;
-            ((PriestBarManager)ClassWindowViewModel.Instance.CurrentManager).Grace.Buff.Refresh(0);
+            ((PriestBarManager)ClassWindowViewModel.Instance.CurrentManager).Grace.Buff.Refresh(0, CooldownMode.Normal);
         }
 
         private static void CheckEdict(S_ABNORMALITY_BEGIN p)
@@ -79,12 +80,12 @@ namespace TCC.ClassSpecific
         private static void CheckEdict(S_ABNORMALITY_REFRESH p)
         {
             if (!EdictIDs.Contains(p.AbnormalityId)) return;
-            ((PriestBarManager)ClassWindowViewModel.Instance.CurrentManager).EdictOfJudgment.Buff.Refresh(p.Duration);
+            ((PriestBarManager)ClassWindowViewModel.Instance.CurrentManager).EdictOfJudgment.Buff.Refresh(p.Duration, CooldownMode.Normal);
         }
         private static void CheckEdict(S_ABNORMALITY_END p)
         {
             if (!EdictIDs.Contains(p.AbnormalityId)) return;
-            ((PriestBarManager)ClassWindowViewModel.Instance.CurrentManager).EdictOfJudgment.Buff.Refresh(0);
+            ((PriestBarManager)ClassWindowViewModel.Instance.CurrentManager).EdictOfJudgment.Buff.Refresh(0, CooldownMode.Normal);
         }
 
         public override void CheckAbnormality(S_ABNORMALITY_BEGIN p)

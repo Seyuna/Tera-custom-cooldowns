@@ -3,8 +3,11 @@ using System.Drawing;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
+using TCC.Controls;
+using TCC.Settings;
 using TCC.ViewModels;
 using TCC.Windows;
+using TCC.Windows.Widgets;
 using NotifyIcon = System.Windows.Forms.NotifyIcon;
 
 namespace TCC
@@ -37,11 +40,14 @@ namespace TCC
         public static BuffWindow BuffWindow;
         public static GroupWindow GroupWindow;
         public static ClassWindow ClassWindow;
+        //public static SettingsWindowOld SettingsWindowOld;
         public static SettingsWindow SettingsWindow;
         public static SkillConfigWindow SkillConfigWindow;
-        public static GroupAbnormalConfigWindow GroupAbnormalConfigWindow;
+        //public static GroupAbnormalConfigWindow GroupAbnormalConfigWindow;
+        //public static MyAbnormalConfigWindow MyAbnormalConfigWindow; //Add My Abnormals Setting by HQ
         public static CivilUnrestWindow CivilUnrestWindow;
-        public static InfoWindow InfoWindow;
+        //public static InfoWindow InfoWindow;
+        public static Dashboard Dashboard;
         public static FloatingButtonWindow FloatingButton;
         public static FlightDurationWindow FlightDurationWindow;
         public static LfgListWindow LfgListWindow;
@@ -161,16 +167,17 @@ namespace TCC
             TrayIcon.MouseDoubleClick += TrayIcon_MouseDoubleClick;
             var v = Assembly.GetExecutingAssembly().GetName().Version;
             TrayIcon.Text = $"TCC v{v.Major}.{v.Minor}.{v.Build}";
-            var closeButton = new MenuItem() { Header = "Close" };
 
-            closeButton.Click += (s, ev) => App.CloseApp();
-            _contextMenu.Items.Add(closeButton);
+            _contextMenu.Items.Add(new MenuItem(){Header = "Dashboard", Command = new RelayCommand(o => Dashboard.ShowWindow())});
+            _contextMenu.Items.Add(new MenuItem(){Header = "Settings", Command = new RelayCommand(o => SettingsWindow.ShowWindow())});
+            _contextMenu.Items.Add(new MenuItem(){Header = "Close", Command = new RelayCommand(o => App.CloseApp())});
 
             //_undimTimer.Elapsed += _undimTimer_Elapsed;
 
+            //SettingsWindowOld = new SettingsWindowOld();
             SettingsWindow = new SettingsWindow();
 
-            if (Settings.UseHotkeys) KeyboardHook.Instance.RegisterKeyboardHook();
+            if (SettingsHolder.UseHotkeys) KeyboardHook.Instance.RegisterKeyboardHook();
             //TccWindow.RecreateWindow += TccWindow_RecreateWindow;
 
         }
@@ -215,7 +222,7 @@ namespace TCC
             try { GroupWindow.CloseWindowSafe(); } catch { }
             try { BossWindow.CloseWindowSafe(); } catch { }
             try { BuffWindow.CloseWindowSafe(); } catch { }
-            try { InfoWindow.Close(); } catch { }
+            try { Dashboard.Close(); } catch { }
             //try { ChatWindow.CloseWindowSafe(); } catch { }
             ChatWindowManager.Instance.CloseAllWindows();
             try { ClassWindow.CloseWindowSafe(); } catch { }
@@ -236,11 +243,13 @@ namespace TCC
             BuffWindow = new BuffWindow();
             CharacterWindow = new CharacterWindow();
             ClassWindow = new ClassWindow();
-            InfoWindow = new InfoWindow();
+            //InfoWindow = new InfoWindow();
+            Dashboard = new Dashboard();
             FlightDurationWindow = new FlightDurationWindow();
             LfgListWindow = new LfgListWindow();
             SkillConfigWindow = new SkillConfigWindow();
-            GroupAbnormalConfigWindow = new GroupAbnormalConfigWindow();
+            //GroupAbnormalConfigWindow = new GroupAbnormalConfigWindow();
+            //MyAbnormalConfigWindow = new MyAbnormalConfigWindow(); //Add My Abnormals Setting by HQ
             CivilUnrestWindow = new CivilUnrestWindow();
             FloatingButton = new FloatingButtonWindow();
             ChatWindowManager.Instance.InitWindows();
@@ -426,12 +435,12 @@ namespace TCC
 
         public static void MakeGlobal()
         {
-            Settings.CooldownWindowSettings.MakePositionsGlobal();
-            Settings.ClassWindowSettings.MakePositionsGlobal();
-            Settings.CharacterWindowSettings.MakePositionsGlobal();
-            Settings.GroupWindowSettings.MakePositionsGlobal();
-            Settings.BuffWindowSettings.MakePositionsGlobal();
-            Settings.BossWindowSettings.MakePositionsGlobal();
+            SettingsHolder.CooldownWindowSettings.MakePositionsGlobal();
+            SettingsHolder.ClassWindowSettings.MakePositionsGlobal();
+            SettingsHolder.CharacterWindowSettings.MakePositionsGlobal();
+            SettingsHolder.GroupWindowSettings.MakePositionsGlobal();
+            SettingsHolder.BuffWindowSettings.MakePositionsGlobal();
+            SettingsHolder.BossWindowSettings.MakePositionsGlobal();
 
             SettingsWriter.Save();
         }

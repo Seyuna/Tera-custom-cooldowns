@@ -1,5 +1,4 @@
-﻿using TCC.Data;
-using TCC.TeraCommon.Game.Messages;
+﻿using TCC.TeraCommon.Game.Messages;
 using TCC.TeraCommon.Game.Services;
 
 namespace TCC.Parsing.Messages
@@ -19,7 +18,7 @@ namespace TCC.Parsing.Messages
             Name = reader.ReadTeraString();
 
             reader.BaseStream.Position = msgOffset - 4;
-            Message = ChatMessage.ReplaceEscapes(reader.ReadTeraString());
+            Message = StringUtils.ReplaceHtmlEscapes(reader.ReadTeraString());
         }
 
         public uint Id { get; private set; }

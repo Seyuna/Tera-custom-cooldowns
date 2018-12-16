@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -12,19 +15,23 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using System.Runtime.CompilerServices;
+using System.Windows.Controls;
 using TCC.Annotations;
 using TCC.Data;
+using TCC.Data.Chat;
+using Color = System.Windows.Media.Color;
+using Point = System.Windows.Point;
 
 namespace TCC
 {
     public static class Utils
     {
 
-        public static BitmapImage BitmapToImageSource(System.Drawing.Bitmap bitmap)
+        public static BitmapImage BitmapToImageSource(Bitmap bitmap)
         {
             using (var ms = new MemoryStream())
             {
-                bitmap.Save(ms, System.Drawing.Imaging.ImageFormat.Bmp);
+                bitmap.Save(ms, ImageFormat.Bmp);
                 ms.Position = 0;
                 var bitmapimage = new BitmapImage();
                 bitmapimage.BeginInit();
@@ -201,6 +208,17 @@ namespace TCC
             return seconds / (60 * 60 * 24) + "d";
         }
 
+        public static ICollectionView InitView(Predicate<object> filter, IEnumerable source, IEnumerable<SortDescription> sortDescr)
+        {
+            var view = new CollectionViewSource { Source = source }.View;
+            view.Filter =  filter;
+            foreach (var sd in sortDescr)
+            {
+                view.SortDescriptions.Add(sd);
+            }
+            return view;
+        }
+
         public static ICollectionViewLiveShaping InitLiveView<T>(Predicate<object> predicate, IEnumerable<T> source,
             string[] filters, SortDescription[] sortFilters)
         {
@@ -223,6 +241,7 @@ namespace TCC
                 foreach (var filter in sortFilters)
                 {
                     (liveView as ICollectionView)?.SortDescriptions.Add(filter);
+                    liveView.LiveSortingProperties.Add(filter.PropertyName);
                 }
 
                 if (liveView != null) liveView.IsLiveSorting = true;
@@ -230,7 +249,15 @@ namespace TCC
 
             return liveView;
         }
+
+        public static double Factor(double value, double maxValue)
+        {
+            if (maxValue == 0) return 1;
+            var n = value / maxValue;
+            return n;
+        }
     }
+
 
     public static class UInt64Extensions
     {
@@ -247,6 +274,15 @@ namespace TCC
         }
     }
 
+    public static class ItemsControlExtensions
+    {
+        public static void RefreshTemplate(this ItemsControl el, string resName)
+        {
+            if (el == null) return;
+            el.ItemTemplateSelector = null;
+            el.ItemTemplateSelector = Application.Current.FindResource(resName) as DataTemplateSelector;
+        }
+    }
     public class DependencyPropertyWatcher<T> : DependencyObject, IDisposable
     {
         public static readonly DependencyProperty ValueProperty =
@@ -305,16 +341,16 @@ namespace TCC
             Dispatcher = newDispatcher;
         }
         public event PropertyChangedEventHandler PropertyChanged;
-        protected void NPC([CallerMemberName] string v = null)
+        protected void N([CallerMemberName] string v = null)
         {
             if (Dispatcher == null) SetDispatcher(App.BaseDispatcher);
             Dispatcher.InvokeIfRequired(() =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(v)), DispatcherPriority.DataBind);
         }
 
-        public void ExNPC(string v)
+        public void ExN(string v)
         {
-            NPC(v);
+            N(v);
         }
     }
     public class SynchronizedObservableCollection<T> : ObservableCollection<T>
@@ -324,7 +360,7 @@ namespace TCC
 
         public SynchronizedObservableCollection()
         {
-            _dispatcher = Dispatcher.CurrentDispatcher;
+            _dispatcher = App.BaseDispatcher;
             _lock = new ReaderWriterLockSlim();
         }
         public SynchronizedObservableCollection(Dispatcher d)
@@ -349,7 +385,8 @@ namespace TCC
         }
         protected override void InsertItem(int index, T item)
         {
-            _dispatcher.InvokeIfRequired(() =>
+            var disp = _dispatcher == null ? App.BaseDispatcher : _dispatcher;
+            disp.InvokeIfRequired(() =>
             {
                 if (index > Count)
                     return;
@@ -443,5 +480,14 @@ namespace TCC
         }
         public static readonly DependencyProperty CornerRadiusProperty =
         DependencyProperty.RegisterAttached("CornerRadius", typeof(CornerRadius), typeof(ButtonExtensions), new PropertyMetadata(new CornerRadius(0)));
+    }
+
+    public static class DispatcherTimerExtensions
+    {
+        public static void Refresh(this DispatcherTimer t)
+        {
+            t.Stop();
+            t.Start();
+        }
     }
 }

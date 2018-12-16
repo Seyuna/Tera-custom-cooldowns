@@ -6,7 +6,10 @@
         xmlns:data="clr-namespace:TCC.Data"
         xmlns:tcc="clr-namespace:TCC"
         xmlns:vm="clr-namespace:TCC.ViewModels"
-        xmlns:controls="clr-namespace:TCC.Controls" Style="{StaticResource BaseWindowStyle}"
+        xmlns:controls="clr-namespace:TCC.Controls"
+        xmlns:settings="clr-namespace:TCC.Controls.Settings"
+        xmlns:pc="clr-namespace:TCC.Data.Pc"
+        Style="{StaticResource BaseWindowStyle}"
         mc:Ignorable="d" d:DataContext="{d:DesignInstance {x:Type vm:LfgListViewModel}}"
         Title="LfgListWindow" Height="800"
         WindowStartupLocation="CenterScreen">
@@ -31,7 +34,7 @@
                 </Setter.Value>
             </Setter>
         </Style>
-        <DataTemplate x:Key="PlayerDt" DataType="data:User">
+        <DataTemplate x:Key="PlayerDt" DataType="pc:User">
             <Grid Background="Transparent" MouseRightButtonDown="Grid_MouseRightButtonDown">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
@@ -45,7 +48,7 @@
                                Width="20" Height="20" Stretch="Uniform">
                         <Rectangle.OpacityMask>
                             <ImageBrush
-                                ImageSource="{Binding UserClass, Converter={StaticResource Converters.ClassToImage}}" />
+                                ImageSource="{Binding UserClass, Converter={StaticResource ClassToImageConverter}}" />
                         </Rectangle.OpacityMask>
                     </Rectangle>
 
@@ -88,7 +91,7 @@
 
             </DataTemplate.Triggers>
         </DataTemplate>
-        <DataTemplate x:Key="ApplicantDt" DataType="data:User">
+        <DataTemplate x:Key="ApplicantDt" DataType="pc:User">
             <Grid Background="Transparent" MouseRightButtonDown="Grid_MouseRightButtonDown">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
@@ -112,7 +115,7 @@
                                Width="20" Height="20" Stretch="Uniform">
                         <Rectangle.OpacityMask>
                             <ImageBrush
-                                ImageSource="{Binding UserClass, Converter={StaticResource Converters.ClassToImage}}" />
+                                ImageSource="{Binding UserClass, Converter={StaticResource ClassToImageConverter}}" />
                         </Rectangle.OpacityMask>
                     </Rectangle>
                     <TextBlock Foreground="{StaticResource GoldBrush}" Style="{StaticResource DefaultTextStyle}" Margin="0 0 0 0"
@@ -190,7 +193,7 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
                 <Ellipse HorizontalAlignment="Left" x:Name="Ell"
-                         Fill="{Binding IsRaid, Converter={StaticResource Converters.RaidToColor}}"
+                         Fill="{Binding IsRaid, Converter={StaticResource RaidToColor}}"
                          Width="11" Height="11" />
                 <TextBlock Text="{Binding Message}"
                            x:Name="MessageTb"
@@ -219,7 +222,7 @@
                 <Rectangle Grid.Row="0"
                            Width="5"
                            Grid.RowSpan="3"
-                           Fill="{Binding IsRaid, Converter={StaticResource Converters.RaidToColor}}"
+                           Fill="{Binding IsRaid, Converter={StaticResource RaidToColor}}"
                            HorizontalAlignment="Left"
                            Margin="3 8 0 5"
                            x:Name="EllExt"
@@ -403,16 +406,30 @@
             </DataTemplate.Triggers>
         </DataTemplate>
     </Window.Resources>
-    <Border Background="{StaticResource DefaultBackgroundBrush}"
+    <Grid>
+
+        <Border Background="{StaticResource RevampBackgroundBrush}"
             CornerRadius="1" Effect="{StaticResource DropShadow}"
-            BorderThickness="1" BorderBrush="#8555"
-            Margin="6" Width="600" HorizontalAlignment="Stretch">
-        <Grid HorizontalAlignment="Stretch">
+            BorderThickness="1" BorderBrush="{StaticResource RevampBorderBrush}"
+            Margin="6" Width="600" HorizontalAlignment="Stretch" Opacity=".7">
+        </Border>
+        <Grid HorizontalAlignment="Stretch" Margin="6">
             <Grid.RowDefinitions>
                 <RowDefinition Height="38" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
+            <Border Effect="{StaticResource DropShadow}" 
+                    Grid.RowSpan="2"
+                    Grid.Row="1"
+                    Background="{StaticResource RevampDarkerBackgroundBrush}"
+                    BorderThickness="1"
+                    Opacity=".7"
+                    Margin="4  21 4 40"
+                    BorderBrush="{StaticResource RevampBorderBrush}"
+                    HorizontalAlignment="Stretch"
+            />
+
             <!--Title-->
             <Path Data="{StaticResource SvgUsers}" HorizontalAlignment="Left" Margin="8 9 5 7"
                   VerticalAlignment="Center" Fill="#9fff">
@@ -455,8 +472,8 @@
                 </Button>
             </Grid>
             <!--Main List-->
-            <ListBox Background="#60000009"
-                     Padding="-1 -1 -1 5"
+            <ListBox Background="Transparent"
+                     Padding="-1 -1 -1 -1"
                      ScrollViewer.CanContentScroll="False"
                      Height="600"
                      ItemContainerStyle="{StaticResource DefaultListItemStyle}"
@@ -464,27 +481,25 @@
                      Grid.Row="2"
                      ItemsSource="{Binding ListingsView}"
                      HorizontalAlignment="Stretch"
-                     Margin="5 5 5 30"
+                     Margin="5 5 5 40"
                      AlternationCount="2"
                      ItemTemplate="{StaticResource ListingDt}">
-                <ListBox.Resources>
-                    <Style TargetType="{x:Type ScrollBar}" BasedOn="{StaticResource NormalScrollBar}"></Style>
-                </ListBox.Resources>
                 <ListBox.ItemsPanel>
                     <ItemsPanelTemplate>
                         <StackPanel HorizontalAlignment="Stretch" />
                     </ItemsPanelTemplate>
                 </ListBox.ItemsPanel>
             </ListBox>
+
             <!--Footer-->
-            <Grid Grid.Row="2" VerticalAlignment="Bottom" >
+            <Grid Grid.Row="2" VerticalAlignment="Bottom" Margin=" 0 0 0 2" >
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition />
                     <RowDefinition />
                 </Grid.RowDefinitions>
-                <Grid ClipToBounds="True" Background="{StaticResource DefaultBackgroundBrush}" x:Name="NewMessageGrid"
-                      Margin="5 0">
+                <Grid ClipToBounds="True" Background="{StaticResource RevampBackgroundBrush}" x:Name="NewMessageGrid"
+                      Margin="5 0 5 3">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition />
                         <ColumnDefinition Width="Auto" />
@@ -501,7 +516,7 @@
                              Text="{Binding NewMessage, Mode=TwoWay , UpdateSourceTrigger=PropertyChanged}">
                     </TextBox>
                     <Grid Grid.Column="1" ClipToBounds="True" Margin="0 5">
-                        <controls:BoolSetting Margin="-40 -4 -8 -4" SettingName="Raid" HorizontalAlignment="Right"
+                        <settings:BoolSetting Margin="-40 -4 -8 -4" SettingName="Raid" HorizontalAlignment="Right"
                                               VerticalContentAlignment="Center" x:Name="RaidSwitch" />
                     </Grid>
                     <Grid.LayoutTransform>
@@ -511,7 +526,7 @@
                 <Button tcc:ButtonExtensions.CornerRadius="3"
                         Grid.Row="1"
                         HorizontalContentAlignment="Center"
-                        Margin="5"
+                        Width="200"
                         Padding="0 4"
                         Effect="{StaticResource DropShadow}"
                         x:Name="CreateMessageBtn"
@@ -519,9 +534,9 @@
                         FontSize="15"
                         FontWeight="Thin"
                         Style="{StaticResource ButtonMainStyle}"
-                        Background="#8556">
+                        Background="{StaticResource RevampBackgroundBrush}">
                     <Button.Content>
-                        <MultiBinding Converter="{StaticResource Converters.LfgVmToButtonLabel}">
+                        <MultiBinding Converter="{StaticResource LfgVmToButtonLabel}">
                             <Binding Path="Creating" />
                             <Binding Path="NewMessage" />
                         </MultiBinding>
@@ -562,7 +577,7 @@
                 </UniformGrid>
             </Grid>
         </Grid>
-    </Border>
+    </Grid>
 </Window>
 
 

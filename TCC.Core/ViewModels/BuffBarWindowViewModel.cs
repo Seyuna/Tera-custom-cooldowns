@@ -1,6 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Threading;
 using TCC.Data;
+using TCC.Data.Pc;
 
 namespace TCC.ViewModels
 {
@@ -9,8 +10,8 @@ namespace TCC.ViewModels
         private static BuffBarWindowViewModel _instance;
         public static BuffBarWindowViewModel Instance => _instance ?? (_instance = new BuffBarWindowViewModel());
 
-        public FlowDirection Direction => Settings.BuffsDirection;
-        public AbnormalityShape Shape => Settings.AbnormalityShape;
+        public FlowDirection Direction => Settings.SettingsHolder.BuffsDirection;
+        public ControlShape Shape => Settings.SettingsHolder.AbnormalityShape;
         public BuffBarWindowViewModel()
         {
             Dispatcher = Dispatcher.CurrentDispatcher;
@@ -20,7 +21,7 @@ namespace TCC.ViewModels
 
         private void CurrentPlayer_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
-            NPC(e.PropertyName);
+            N(e.PropertyName);
         }
 
         public Player Player => SessionManager.CurrentPlayer;

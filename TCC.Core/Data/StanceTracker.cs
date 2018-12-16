@@ -3,18 +3,7 @@ using System.Windows.Threading;
 
 namespace TCC.Data
 {
-    public enum ArcherStance
-    {
-        None, SniperEye
-    }
-    public enum WarriorStance
-    {
-        None, Assault, Defensive
-    }
-    public enum MysticAuras
-    {
-        None, Crit, Mana, CritRes, Swift
-    }
+
     public class StanceTracker<T> : TSPropertyChanged where T : IComparable
     {
         private T _currentStance;
@@ -25,7 +14,7 @@ namespace TCC.Data
             {
                 if (_currentStance.CompareTo(value) == 0) return;
                 _currentStance = value;
-                NPC(nameof(CurrentStance));
+                N(nameof(CurrentStance));
             }
         }
         public StanceTracker()
@@ -42,7 +31,7 @@ namespace TCC.Data
             {
                 if (_crit == value) return;
                 _crit = value;
-                NPC();
+                N();
                 AuraChanged?.Invoke();
             }
         }
@@ -52,7 +41,7 @@ namespace TCC.Data
             {
                 if (_mp == value) return;
                 _mp = value;
-                NPC();
+                N();
                 AuraChanged?.Invoke();
             }
         }
@@ -62,7 +51,7 @@ namespace TCC.Data
             {
                 if (_res == value) return;
                 _res = value;
-                NPC();
+                N();
                 AuraChanged?.Invoke();
             }
         }
@@ -72,7 +61,7 @@ namespace TCC.Data
             {
                 if (_swift == value) return;
                 _swift = value;
-                NPC();
+                N();
                 AuraChanged?.Invoke();
             }
         }

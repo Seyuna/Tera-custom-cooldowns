@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Timers;
 using System.Windows.Input;
+using TCC.Data.Pc;
 using TCC.ViewModels;
 
 namespace TCC.Data
@@ -31,7 +32,7 @@ namespace TCC.Data
             {
                 if (_playerId == value) return;
                 _playerId = value;
-                NPC();
+                N();
             }
         }
 
@@ -42,8 +43,8 @@ namespace TCC.Data
             {
                 if (_isRaid == value) return;
                 _isRaid = value;
-                NPC();
-                NPC(nameof(MaxCount));
+                N();
+                N(nameof(MaxCount));
             }
         }
         public int PlayerCount
@@ -53,7 +54,7 @@ namespace TCC.Data
             {
                 if (_playerCount == value) return;
                 _playerCount = value;
-                NPC();
+                N();
             }
         }
         public string Message
@@ -63,9 +64,9 @@ namespace TCC.Data
             {
                 if (_message == value) return;
                 _message = value.Replace("&gt;", ">").Replace("&lt;", "<");
-                NPC();
-                NPC(nameof(IsTrade));
-                NPC(nameof(IsTwitch));
+                N();
+                N(nameof(IsTrade));
+                N(nameof(IsTwitch));
             }
         }
         public string LeaderName
@@ -75,7 +76,7 @@ namespace TCC.Data
             {
                 if (_leaderName == value) return;
                 _leaderName = value;
-                NPC();
+                N();
             }
         }
         public bool IsExpanded
@@ -85,7 +86,7 @@ namespace TCC.Data
             {
                 if (_isExpanded == value) return;
                 _isExpanded = value;
-                NPC();
+                N();
             }
         }
 
@@ -102,7 +103,7 @@ namespace TCC.Data
             {
                 if (_players == value) return;
                 _players = value;
-                NPC();
+                N();
             }
         }
         public SynchronizedObservableCollection<User> Applicants
@@ -112,7 +113,7 @@ namespace TCC.Data
             {
                 if (_applicants == value) return;
                 _applicants= value;
-                NPC();
+                N();
             }
         }
         public int MaxCount => IsRaid ? 30 : 5;
@@ -125,7 +126,7 @@ namespace TCC.Data
             {
                 if (_canApply == value) return;
                 _canApply = value;
-                NPC();
+                N();
             }
         }
 
@@ -143,11 +144,12 @@ namespace TCC.Data
             }
         }
 
-        public bool IsTwitch => _message.Contains("twitch.tv");
+        public bool IsTwitch => _message.IndexOf("twitch.tv", StringComparison.InvariantCultureIgnoreCase) !=-1;
+
 
         public void NotifyMyLfg()
         {
-            NPC(nameof(IsMyLfg));
+            N(nameof(IsMyLfg));
         }
 
         public Listing()
@@ -174,9 +176,9 @@ namespace TCC.Data
                 listing.CanApply = true;
             };
         }
-
+#pragma warning disable 0067
         public event EventHandler CanExecuteChanged;
-
+#pragma warning restore 0067
         public bool CanExecute(object parameter)
         {
             return _listing.CanApply;
@@ -184,7 +186,7 @@ namespace TCC.Data
 
         public void Execute(object parameter)
         {
-            Proxy.ApplyToLfg(_listing.LeaderId);
+            Proxy.Proxy.ApplyToLfg(_listing.LeaderId);
             _listing.CanApply = false;
             _t.Start();
         }
@@ -196,9 +198,9 @@ namespace TCC.Data
         {
             _listing = listing;
         }
-
+#pragma warning disable 0067
         public event EventHandler CanExecuteChanged;
-
+#pragma warning restore 0067
         public bool CanExecute(object parameter)
         {
             return _listing.IsMyLfg;
@@ -206,7 +208,7 @@ namespace TCC.Data
 
         public void Execute(object parameter)
         {
-            Proxy.RequestCandidates();
+            Proxy.Proxy.RequestCandidates();
         }
     }
 

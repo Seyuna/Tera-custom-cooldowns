@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -9,9 +10,7 @@ using TCC.ViewModels;
 
 namespace TCC.Windows
 {
-    /// <summary>
-    /// Logica di interazione per DebugWindow.xaml
-    /// </summary>
+    [SuppressMessage("ReSharper", "PossibleNullReferenceException")]
     public sealed partial class DebugWindow : INotifyPropertyChanged
     {
         public DebugWindow()
@@ -37,7 +36,7 @@ namespace TCC.Windows
         private int Sum
         {
             get => _sum;
-            set { _sum = value; NPC();}
+            set { _sum = value; NPC(); }
         }
         public double Avg => _count == 0 ? 0 : Sum / _count;
 
@@ -69,6 +68,76 @@ namespace TCC.Windows
         {
             SessionManager.CurrentPlayer.Class = (Class)Enum.Parse(typeof(Class), (sender as Button).Content.ToString());
             ClassWindowViewModel.Instance.CurrentClass = SessionManager.CurrentPlayer.Class;
+        }
+
+        private void SetSorcElement(object sender, RoutedEventArgs e)
+        {
+            var el = (sender as Button).Content.ToString();
+
+            var fire = el == "Fire";
+            var ice = el == "Ice";
+            var arc = el == "Arcane";
+
+            var currFire = SessionManager.CurrentPlayer.Fire;
+            var currIce = SessionManager.CurrentPlayer.Ice;
+            var currArc = SessionManager.CurrentPlayer.Arcane;
+
+            if (fire) SessionManager.SetSorcererElements(!currFire, currIce, currArc);
+            if (ice) SessionManager.SetSorcererElements(currFire, !currIce, currArc);
+            if (arc) SessionManager.SetSorcererElements(currFire, currIce, !currArc);
+        }
+
+        private void SetSorcElementBoost(object sender, RoutedEventArgs e)
+        {
+            var el = (sender as Button).Content.ToString().Split(' ')[0];
+
+            var fire = el == "Fire";
+            var ice = el == "Ice";
+            var arc = el == "Arcane";
+
+            var currFire = SessionManager.CurrentPlayer.FireBoost;
+            var currIce = SessionManager.CurrentPlayer.IceBoost;
+            var currArc = SessionManager.CurrentPlayer.ArcaneBoost;
+
+            if (fire) SessionManager.SetSorcererElementsBoost(!currFire, currIce, currArc);
+            if (ice) SessionManager.SetSorcererElementsBoost(currFire, !currIce, currArc);
+            if (arc) SessionManager.SetSorcererElementsBoost(currFire, currIce, !currArc);
+
+
+        }
+
+        private void ButtonBase_OnClick(object sender, RoutedEventArgs e)
+        {
+            //((SorcererBarManager) ClassWindowViewModel.Instance.CurrentManager).ManaBoost.Buff.Start(20000);
+
+            SkillManager.AddSkill(100700, 20000);
+            SkillManager.AddSkill(400120, 20000);
+            SkillManager.AddItemSkill(6298, 10);
+            SkillManager.ResetSkill(400120);
+            //CooldownWindowViewModel.Instance.AddOrRefresh(new SkillCooldown(new Skill(100700, Class.Warrior, "dfa", ""),20000, CooldownType.Skill, Dispatcher.CurrentDispatcher, true, true));
+        }
+
+        private void SetStance(object sender, RoutedEventArgs e)
+        {
+            if (((Button)sender).Content.ToString() == "Assault") ((WarriorBarManager)ClassWindowViewModel.Instance.CurrentManager).Stance.CurrentStance = WarriorStance.Assault;
+            else if (((Button)sender).Content.ToString() == "Defensive") ((WarriorBarManager)ClassWindowViewModel.Instance.CurrentManager).Stance.CurrentStance = WarriorStance.Defensive;
+            else if (((Button)sender).Content.ToString() == "None") ((WarriorBarManager)ClassWindowViewModel.Instance.CurrentManager).Stance.CurrentStance = WarriorStance.None;
+        }
+
+        private void IncreaseEdge(object sender, RoutedEventArgs e)
+        {
+            if (((WarriorBarManager)ClassWindowViewModel.Instance.CurrentManager).EdgeCounter.IsMaxed) ((WarriorBarManager)ClassWindowViewModel.Instance.CurrentManager).EdgeCounter.Val = 0;
+            ((WarriorBarManager)ClassWindowViewModel.Instance.CurrentManager).EdgeCounter.Val++;
+
+        }
+
+        private void DungeonTest(object sender, RoutedEventArgs e)
+        {
+            //i = 0;
+            //WindowManager.Dashboard.VM.SetDungeons(20000078, new Dictionary<uint, short>() { { 9770U, i++ } });
+
+            WindowManager.Dashboard.VM.Characters[0].VanguardDailiesDone = App.Random.Next(0,16);
+            WindowManager.Dashboard.VM.Characters[0].VanguardWeekliesDone= App.Random.Next(0,16);
         }
     }
 }

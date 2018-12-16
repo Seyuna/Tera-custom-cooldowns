@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 
@@ -33,8 +34,7 @@ namespace TCC.Controls
             set => SetValue(DirectionProperty, value);
         }
 
-        public static readonly DependencyProperty DirectionProperty = DependencyProperty.Register("Direction",
-            typeof(SweepDirection), typeof(Arc), new UIPropertyMetadata(SweepDirection.Clockwise));
+        public static readonly DependencyProperty DirectionProperty = DependencyProperty.Register("Direction", typeof(SweepDirection), typeof(Arc), new UIPropertyMetadata(SweepDirection.Clockwise));
 
         //rotate the start/endpoint of the arc a certain number of degree in the direction
         //ie. if you wanted it to be at 12:00 that would be 270 Clockwise or 90 counterclockwise
@@ -44,22 +44,36 @@ namespace TCC.Controls
             set => SetValue(OriginRotationDegreesProperty, value);
         }
 
-        public static readonly DependencyProperty OriginRotationDegreesProperty =
-            DependencyProperty.Register("OriginRotationDegrees", typeof(double), typeof(Arc),
-                new UIPropertyMetadata(270.0, UpdateArc));
+        public static readonly DependencyProperty OriginRotationDegreesProperty = DependencyProperty.Register("OriginRotationDegrees", typeof(double), typeof(Arc), new UIPropertyMetadata(270.0, UpdateArc));
 
         public bool Rhomb
         {
             get { return (bool)GetValue(RhombProperty); }
             set { SetValue(RhombProperty, value); }
         }
-        public static readonly DependencyProperty RhombProperty =
-            DependencyProperty.Register("Rhomb", typeof(bool), typeof(Arc), new PropertyMetadata(false));
+        public static readonly DependencyProperty RhombProperty = DependencyProperty.Register("Rhomb", typeof(bool), typeof(Arc), new PropertyMetadata(false));
 
+        protected override void OnMouseEnter(MouseEventArgs e)
+        {
+            base.OnMouseEnter(e);
+            InvalidateMeasure();
+        }
+
+        protected override Size MeasureOverride(Size constraint)
+        {
+            var ret = base.MeasureOverride(constraint);
+            if (ret.Height > DesiredSize.Height || ret.Width > DesiredSize.Width)
+            {
+                if (DesiredSize.Height == 0 && DesiredSize.Width == 0) return ret;
+                return constraint;
+            }
+            return ret;
+        }
 
         protected static void UpdateArc(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var arc = d as Arc;
+            arc?.InvalidateMeasure();
             arc?.InvalidateVisual();
         }
 
@@ -71,21 +85,21 @@ namespace TCC.Controls
         }
 
         private Geometry GetGeometry() => Rhomb ? GetRhombGeometry() : GetArcGeometry();
-        private Geometry MainArc()
-        {
-            var endPoint = PointAtAngle(Math.Max(StartAngle, EndAngle), Direction);
-            var xr = (RenderSize.Width - StrokeThickness) / 2;
-            var yr = (RenderSize.Height - StrokeThickness) / 2;
-            var origin = new Point(xr, yr);
-            var geom = new StreamGeometry();
-            using (var context = geom.Open())
-            {
-                context.BeginFigure(origin, false, false);
-                context.LineTo(endPoint, true, false);
-                geom.Transform = new TranslateTransform(StrokeThickness / 2, StrokeThickness / 2);
-                return geom;
-            }
-        }
+        //private Geometry MainArc()
+        //{
+        //    var endPoint = PointAtAngle(Math.Max(StartAngle, EndAngle), Direction);
+        //    var xr = (RenderSize.Width - StrokeThickness) / 2;
+        //    var yr = (RenderSize.Height - StrokeThickness) / 2;
+        //    var origin = new Point(xr, yr);
+        //    var geom = new StreamGeometry();
+        //    using (var context = geom.Open())
+        //    {
+        //        context.BeginFigure(origin, false, false);
+        //        context.LineTo(endPoint, true, false);
+        //        geom.Transform = new TranslateTransform(StrokeThickness / 2, StrokeThickness / 2);
+        //        return geom;
+        //    }
+        //}
 
         private Geometry GetArcGeometry()
         {
@@ -116,9 +130,6 @@ namespace TCC.Controls
             var xr = (RenderSize.Width - StrokeThickness) / 2;
             var yr = (RenderSize.Height - StrokeThickness) / 2;
             var origin = new Point(xr, yr);
-            var arcSize = new Size(Math.Max(0, (RenderSize.Width - StrokeThickness) / 2),
-                Math.Max(0, (RenderSize.Height - StrokeThickness) / 2));
-            var isLargeArc = Math.Abs(EndAngle - StartAngle) > 180;
 
             var geom = new StreamGeometry();
             using (var context = geom.Open())
@@ -178,7 +189,7 @@ namespace TCC.Controls
             return new Point(x, y);
         }
 
-        private Point FindPoint(Point l1p1, Point l1p2, Point l2p1, Point l2p2)
+        private Point FindPoint(Point a, Point b, Point c, Point d)
         {
             //var trM = GetLineM(l1p1, l1p2);
             //var trQ = GetLineQ(l1p1, l1p2);
@@ -188,13 +199,13 @@ namespace TCC.Controls
             //var finalY = ((opM / trM) * trQ + opQ) / (1 - (opM / trM));
 
             //return new Point(finalX, finalY);
-            var a1 = l1p2.Y - l1p1.Y;
-            var b1 = l1p1.X - l1p2.X;
-            var c1 = a1 * l1p1.X + b1 * l1p1.Y;
+            var a1 = b.Y - a.Y;
+            var b1 = a.X - b.X;
+            var c1 = a1 * a.X + b1 * a.Y;
 
-            var a2 = l2p2.Y - l2p1.Y;
-            var b2 = l2p1.X - l2p2.X;
-            var c2 = a2 * l2p1.X + b2 * l2p1.Y;
+            var a2 = d.Y - c.Y;
+            var b2 = c.X - d.X;
+            var c2 = a2 * c.X + b2 * c.Y;
 
             var delta = a1 * b2 - a2 * b1;
             //If lines are parallel, the result will be (NaN, NaN).
@@ -203,16 +214,16 @@ namespace TCC.Controls
         }
 
 
-        private double GetLineQ(Point p1, Point p2)
-        {
-            var q = p1.Y - p1.X * (p2.Y - p1.Y) / (p2.X - p1.X);
-            return q;
-        }
-        private double GetLineM(Point p1, Point p2)
-        {
-            var m = (p2.Y - p1.Y) / (p2.X - p1.X);
-            return m;
-        }
+        //private double GetLineQ(Point p1, Point p2)
+        //{
+        //    var q = p1.Y - p1.X * (p2.Y - p1.Y) / (p2.X - p1.X);
+        //    return q;
+        //}
+        //private double GetLineM(Point p1, Point p2)
+        //{
+        //    var m = (p2.Y - p1.Y) / (p2.X - p1.X);
+        //    return m;
+        //}
         //x-x1 / x2-x1 = y-y1 / y2-y1
 
     }

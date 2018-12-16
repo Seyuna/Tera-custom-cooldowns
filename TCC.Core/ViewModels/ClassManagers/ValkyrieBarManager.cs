@@ -1,4 +1,5 @@
 ﻿using TCC.Data;
+using TCC.Data.Skills;
 
 namespace TCC.ViewModels
 {
@@ -20,26 +21,33 @@ namespace TCC.ViewModels
             SessionManager.SkillsDatabase.TryGetSkill(250100, Class.Valkyrie, out var gf);
             Ragnarok = new DurationCooldownIndicator(Dispatcher)
             {
-                Cooldown = new FixedSkillCooldown(rag, true),
-                Buff = new FixedSkillCooldown(rag, false)
+                Cooldown = new Cooldown(rag, true) { CanFlash = true },
+                Buff = new Cooldown(rag, false)
             };
             Godsfall = new DurationCooldownIndicator(Dispatcher)
             {
-                Cooldown = new FixedSkillCooldown(gf, true),
-                Buff = new FixedSkillCooldown(gf, false)
+                Cooldown = new Cooldown(gf, true) { CanFlash = true },
+                Buff = new Cooldown(gf, false)
             };
         }
-        public override bool StartSpecialSkill(SkillCooldown sk)
+
+        public override void Dispose()
+        {
+            Ragnarok.Cooldown.Dispose();
+            Godsfall.Cooldown.Dispose();
+        }
+
+        public override bool StartSpecialSkill(Cooldown sk)
         {
 
             if (sk.Skill.IconName == Ragnarok.Cooldown.Skill.IconName)
             {
-                Ragnarok.Cooldown.Start(sk.Cooldown);
+                Ragnarok.Cooldown.Start(sk.Duration);
                 return true;
             }
             if (sk.Skill.IconName == Godsfall.Cooldown.Skill.IconName)
             {
-                Godsfall.Cooldown.Start(sk.Cooldown);
+                Godsfall.Cooldown.Start(sk.Duration);
                 return true;
             }
             return false;

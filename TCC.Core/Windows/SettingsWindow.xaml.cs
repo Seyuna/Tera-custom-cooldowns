@@ -2,10 +2,10 @@
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
-using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using TCC.Settings;
 using TCC.ViewModels;
 
 namespace TCC.Windows
@@ -15,100 +15,45 @@ namespace TCC.Windows
     /// </summary>
     public partial class SettingsWindow
     {
-        public SettingsWindow()
-        {
-            InitializeComponent();
-            Closing += SettingsWindow_Closing;
-        }
-
-        private void SettingsWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
-        {
-            e.Cancel = true;
-            Image_MouseLeftButtonDown(null, null);
-        }
 
         public IntPtr Handle => Dispatcher.Invoke(() => new WindowInteropHelper(this).Handle);
 
-        private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        public SettingsWindow()
         {
-            DragMove();
+            InitializeComponent();
+            TitleBarGrid.MouseLeftButtonDown += (_, __) => DragMove();
         }
 
-        private void Image_MouseLeftButtonDown(object sender, RoutedEventArgs routedEventArgs)
+        private void OnCloseButtonClick(object sender, RoutedEventArgs e)
         {
-            SettingsWriter.Save();
             HideWindow();
+            SettingsWriter.Save();
         }
 
-        public void HideWindow()
+        private void OpenPlayerBuffSettings(object sender, RoutedEventArgs e)
         {
-            var a = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(200));
-            a.Completed += (s, ev) =>
+            //Add My Abnormals Setting by HQ ============================================================
+            new MyAbnormalConfigWindow().ShowWindow();
+            //===========================================================================================
+        }
+
+        private void OpenGroupBuffSettings(object sender, RoutedEventArgs e)
+        {
+            new GroupAbnormalConfigWindow().ShowWindow();
+
+            //WindowManager.GroupAbnormalConfigWindow.ShowWindow();
+        }
+        private void ResetChatWindowsPosition(object sender, RoutedEventArgs e)
+        {
+            foreach (var cw in ChatWindowManager.Instance.ChatWindows)
             {
-                Hide();
-                if (Settings.ForceSoftwareRendering) RenderOptions.ProcessRenderMode = RenderMode.SoftwareOnly;
-            };
-            BeginAnimation(OpacityProperty, a);
-            //WindowManager.ForegroundManager.RefreshVisible();
-
-        }
-
-        private void Window_Loaded(object sender, RoutedEventArgs e)
-        {
-            //FocusManager.settingsWindowHandle = new WindowInteropHelper(this).Handle;
-
-        }
-
-        private void GitHubLink_MouseDown(object sender, MouseButtonEventArgs e)
-        {
-            Process.Start("https://github.com/Foglio1024/Tera-custom-cooldowns/releases");
-        }
-
-        private void DiscordLink_MouseDown(object sender, MouseButtonEventArgs e)
-        {
-            Process.Start("https://discord.gg/anUXQTp");
-        }
-
-        private void Window_MouseDown(object sender, MouseButtonEventArgs e)
-        {
-            ((FrameworkElement)Content).Focus();
-        }
-        public void ShowWindow()
-        {
-            if (Settings.ForceSoftwareRendering) RenderOptions.ProcessRenderMode = RenderMode.Default;
-
-            Opacity = 0;
-            Activate();
-            Show();
-            BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(200)));
-
+                cw.ResetToCenter();
+            }
         }
 
         private void SendWebhookTest(object sender, RoutedEventArgs e)
         {
             TimeManager.Instance.SendWebhookMessageOld(testMessage: true);
-        }
-
-        private void OpenSettingsFolder(object sender, RoutedEventArgs e)
-        {
-            Process.Start(Path.GetDirectoryName(typeof(App).Assembly.Location)+ "/resources/config");
-        }
-
-/*
-        private void ConnectToTwitch(object sender, RoutedEventArgs e)
-        {
-            //TwitchConnector.Instance.Init();
-        }
-*/
-
-        private void PaypalLink_MouseDown(object sender, MouseButtonEventArgs e)
-        {
-            Process.Start("https://paypal.me/foglio1024");
-        }
-
-        private void ButtonBase_OnClick(object sender, RoutedEventArgs e)
-        {
-            WindowManager.GroupAbnormalConfigWindow.ShowWindow();
         }
 
         private void MakePositionsGlobal(object sender, RoutedEventArgs e)
@@ -121,52 +66,82 @@ namespace TCC.Windows
             WindowManager.ResetToCenter();
         }
 
-        private void ResetCharacterWindowPosition(object sender, RoutedEventArgs e)
+        private void OpenResourcesFolder(object sender, RoutedEventArgs e)
         {
-            WindowManager.CharacterWindow.ResetToCenter();
+            Process.Start(Path.Combine(App.BasePath, "resources/config"));
         }
 
-        private void ResetBossWindowPosition(object sender, RoutedEventArgs e)
+        private void GoToPaypal(object sender, RoutedEventArgs e)
         {
-            WindowManager.BossWindow.ResetToCenter();
+            Process.Start("https://paypal.me/foglio1024");
         }
 
-        private void ResetCooldownWindowPosition(object sender, RoutedEventArgs e)
+        private void GoToBamTimes(object sender, RoutedEventArgs e)
         {
-            WindowManager.CooldownWindow.ResetToCenter();
+            Process.Start("https://tcc-web-99a64.firebaseapp.com/");
         }
 
-        private void ResetChatWindowsPosition(object sender, RoutedEventArgs e)
+        private void GoToRestyle(object sender, RoutedEventArgs e)
         {
-            foreach (var cw in ChatWindowManager.Instance.ChatWindows)
+            Process.Start("https://github.com/Foglio1024/tera-restyle/wiki");
+        }
+
+        private void GoToChat2(object sender, RoutedEventArgs e)
+        {
+            Process.Start("https://github.com/Foglio1024/S1UI_chat2/blob/master/p75/S1UI_Chat2.gpk");
+        }
+
+        private void GoToTccStub(object sender, RoutedEventArgs e)
+        {
+            Process.Start("https://github.com/Foglio1024/tcc-stub");
+        }
+
+        private void GoToCaaliModsDiscord(object sender, RoutedEventArgs e)
+        {
+            Process.Start("https://discord.gg/dUNDDtw");
+        }
+
+        private void GoToTeraDpsDiscord(object sender, RoutedEventArgs e)
+        {
+            Process.Start("https://discord.gg/anUXQTp");
+        }
+
+        private void GoToIssues(object sender, RoutedEventArgs e)
+        {
+            Process.Start("https://github.com/Foglio1024/Tera-custom-cooldowns/issues");
+        }
+
+        private void GoToReleases(object sender, RoutedEventArgs e)
+        {
+            Process.Start("https://github.com/Foglio1024/Tera-custom-cooldowns/releases");
+        }
+
+        private void GoToWiki(object sender, RoutedEventArgs e)
+        {
+            Process.Start("https://github.com/Foglio1024/Tera-custom-cooldowns/wiki");
+        }
+
+        private void EventSetter_OnHandler(object sender, RoutedEventArgs e)
+        {
+            var t = sender as FrameworkElement;
+            t.Opacity = 0;
+            t.RenderTransform = new TranslateTransform(-20, 0);
+            var ease = new QuadraticEase();
+            var slideAnim = new DoubleAnimation(-20, 0, TimeSpan.FromMilliseconds(750)){EasingFunction = ease};
+            var fadeAnim = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(750)){EasingFunction = ease};
+            t.BeginAnimation(OpacityProperty, fadeAnim);
+            t.RenderTransform.BeginAnimation(TranslateTransform.XProperty, slideAnim);
+
+        }
+
+        private void ClearChatMessages(object sender, RoutedEventArgs e)
+        {
+            foreach (var chatMessage in ChatWindowManager.Instance.ChatMessages)
             {
-                cw.ResetToCenter();
+             chatMessage.Dispose();
             }
-        }
 
-        private void ResetBuffWindowPosition(object sender, RoutedEventArgs e)
-        {
-            WindowManager.BuffWindow.ResetToCenter();
-        }
-
-        private void ResetClassWindowPosition(object sender, RoutedEventArgs e)
-        {
-            WindowManager.ClassWindow.ResetToCenter();
-        }
-
-        private void ResetGroupWindowPosition(object sender, RoutedEventArgs e)
-        {
-            WindowManager.GroupWindow.ResetToCenter();
-        }
-
-        private void ResetFlightGaugePosition(object sender, RoutedEventArgs e)
-        {
-            WindowManager.FlightDurationWindow.ResetToCenter();
-        }
-
-        private void ResetCuWindowPosition(object sender, RoutedEventArgs e)
-        {
-            WindowManager.CivilUnrestWindow.ResetToCenter();
+            ChatWindowManager.Instance.ChatMessages.Clear();
         }
     }
 }

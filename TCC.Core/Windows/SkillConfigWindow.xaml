@@ -1,11 +1,11 @@
 ﻿<Window x:Class="TCC.Windows.SkillConfigWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:skills="clr-namespace:TCC.Data.Skills"
         xmlns:local="clr-namespace:TCC.Windows"
         xmlns:dd="urn:gong-wpf-dragdrop"
-        xmlns:data="clr-namespace:TCC.Data"
         mc:Ignorable="d"
         SizeToContent="Height"
         ResizeMode="NoResize"
@@ -16,20 +16,20 @@
         WindowStartupLocation="CenterScreen"
         Title="TCC" Height="Auto" Width="1000" d:DataContext="{d:DesignData CooldownWindowViewModel}">
     <Window.Resources>
-        <DataTemplate x:Key="DragAdornerTemplate" DataType="data:Skill">
+        <DataTemplate x:Key="DragAdornerTemplate" DataType="skills:Skill">
             <Ellipse Width="55" Height="{Binding ElementName=icon, Path=ActualWidth}" x:Name="icon"
                      Stroke="#7fff"
                      StrokeThickness="1" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <Ellipse.Fill>
                     <ImageBrush
-                        ImageSource="{Binding IconName, Converter={StaticResource Converters.IconNameToPath}}" />
+                        ImageSource="{Binding IconName, Converter={StaticResource IconNameToPath}}" />
                 </Ellipse.Fill>
                 <Ellipse.RenderTransform>
                     <TranslateTransform X="-30" Y="30"></TranslateTransform>
                 </Ellipse.RenderTransform>
             </Ellipse>
         </DataTemplate>
-        <DataTemplate x:Key="HddenSkillDataTemplate" DataType="data:Skill">
+        <DataTemplate x:Key="HddenSkillDataTemplate" DataType="skills:Cooldown">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
@@ -41,10 +41,10 @@
                          StrokeThickness="1" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <Ellipse.Fill>
                         <ImageBrush
-                            ImageSource="{Binding IconName, Converter={StaticResource Converters.IconNameToPath}}" />
+                            ImageSource="{Binding Skill.IconName, Converter={StaticResource IconNameToPath}}" />
                     </Ellipse.Fill>
                 </Ellipse>
-                <TextBlock Grid.Column="1" Foreground="#9fff" Text="{Binding ShortName}"
+                <TextBlock Grid.Column="1" Foreground="#9fff" Text="{Binding Skill.ShortName}"
                            VerticalAlignment="Center" Margin="5 0" />
                 <Button Style="{StaticResource ButtonContentOpacityStyle}" VerticalAlignment="Center" Click="RemoveHiddenSkill" Grid.Column="2">
                     <Path Data="{StaticResource SvgClose}" Stretch="Uniform" Fill="{StaticResource HpBrush}"></Path>
@@ -80,7 +80,7 @@
         <UniformGrid Columns="3" Grid.Row="1">
             <UniformGrid.Resources>
                 <Style TargetType="ListBox">
-                    <Setter Property="ItemTemplate" Value="{StaticResource FixedSkillDataTemplate}"></Setter>
+                    <Setter Property="ItemTemplate" Value="{StaticResource FixedSkillDataTemplateForConfig}"></Setter>
                     <Setter Property="ItemContainerStyle" Value="{StaticResource DefaultListItemStyle}"></Setter>
                     <Setter Property="Background" Value="#3000"></Setter>
                     <Setter Property="BorderThickness" Value="1"></Setter>
@@ -123,31 +123,26 @@
                         dd:DragDrop.DragAdornerTemplate="{StaticResource DragAdornerTemplate}"
                         dd:DragDrop.IsDropTarget="True"
                         dd:DragDrop.DropHandler="{Binding DragHandler, RelativeSource={RelativeSource AncestorType=local:SkillConfigWindow}}">
-                        <ListBox.Resources>
-                            <Style TargetType="{x:Type ScrollBar}" BasedOn="{StaticResource NormalScrollBar}"></Style>
-                        </ListBox.Resources>
+
 
                     </ListBox>
                     <StackPanel Grid.Row="1" Orientation="Horizontal">
 
-                    <TextBlock Style="{StaticResource DefaultTextStyle}" Margin="10 0"
+                        <TextBlock Style="{StaticResource DefaultTextStyle}" Margin="10 0"
                                Opacity=".8" FontWeight="Thin" FontSize="16" >
                         Hidden skills
-                    </TextBlock>
-                    <Path Data="{StaticResource SvgInfo}" Margin="0 1 10 0" Height="14"
+                        </TextBlock>
+                        <Path Data="{StaticResource SvgInfo}" Margin="0 1 10 0" Height="14"
                           VerticalAlignment="Top" Fill="#3fff"
                           HorizontalAlignment="Right" ToolTip="Non-fixed skills (also items) hidden using the Hide button will be displayed here.">
-                    </Path>
+                        </Path>
                     </StackPanel>
                     <ListBox
                         VerticalAlignment="Stretch"
-                        ItemsSource="{Binding HiddenSkills}"
+                        ItemsSource="{Binding Instance.HiddenSkills}"
                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                          ItemTemplate="{StaticResource HddenSkillDataTemplate}"
                         Grid.Row="2">
-                        <ListBox.Resources>
-                            <Style TargetType="{x:Type ScrollBar}" BasedOn="{StaticResource NormalScrollBar}"></Style>
-                        </ListBox.Resources>
                     </ListBox>
                 </Grid>
             </Grid>
@@ -178,9 +173,6 @@
                          dd:DragDrop.DropHandler="{Binding DragHandler, RelativeSource={RelativeSource AncestorType=local:SkillConfigWindow}}"
                          dd:DragDrop.IsDropTarget="True"
                          Grid.Row="2">
-                    <ListBox.Resources>
-                        <Style TargetType="{x:Type ScrollBar}" BasedOn="{StaticResource NormalScrollBar}"></Style>
-                    </ListBox.Resources>
                 </ListBox>
             </Grid>
             <Grid>
@@ -211,9 +203,6 @@
                          dd:DragDrop.DropHandler="{Binding DragHandler, RelativeSource={RelativeSource AncestorType=local:SkillConfigWindow}}"
                          dd:DragDrop.IsDropTarget="True">
 
-                    <ListBox.Resources>
-                        <Style TargetType="{x:Type ScrollBar}" BasedOn="{StaticResource NormalScrollBar}"></Style>
-                    </ListBox.Resources>
                 </ListBox>
             </Grid>
         </UniformGrid>
@@ -222,4 +211,5 @@
             Drag and drop a skill, item, abnormality to the cooldown bar
         </TextBlock>
     </Grid>
+
 </Window>

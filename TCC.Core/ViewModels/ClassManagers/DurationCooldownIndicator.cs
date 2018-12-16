@@ -1,39 +1,39 @@
 ﻿using System.Windows.Threading;
-using TCC.Data;
+using TCC.Data.Skills;
 
 namespace TCC.ViewModels
 {
     public class DurationCooldownIndicator : TSPropertyChanged
     {
-        private FixedSkillCooldown _cooldown;
-        private FixedSkillCooldown _buff;
+        private Cooldown _cooldown;
+        private Cooldown _buff;
 
-        public FixedSkillCooldown Cooldown
+        public Cooldown Cooldown
         {
             get => _cooldown;
             set
             {
                 if(_cooldown == value) return;
                 _cooldown = value;
-                NPC();
+                N();
             }
         }
-        public FixedSkillCooldown Buff
+        public Cooldown Buff
         {
             get => _buff;
             set
             {
                 if(_buff == value) return;
                 _buff = value;
-                NPC();
+                N();
             }
         }
 
         public DurationCooldownIndicator(Dispatcher d)
         {
             Dispatcher = d;
-            Cooldown = new FixedSkillCooldown();
-            Buff = new FixedSkillCooldown();
+            Cooldown = new Cooldown();
+            Buff = new Cooldown();
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using TCC.Data;
+using TCC.Data.Skills;
 
 namespace TCC.ViewModels
 {
@@ -8,9 +9,9 @@ namespace TCC.ViewModels
 
         private ArcherFocusTracker _focus;
         //private StanceTracker<ArcherStance> _stance;
-        private FixedSkillCooldown _thunderbolt;
+        private Cooldown _thunderbolt;
         private DurationCooldownIndicator _windsong;
-        private FixedSkillCooldown _windWalk;
+        private Cooldown _windWalk;
 
         public ArcherFocusTracker Focus
         {
@@ -19,7 +20,7 @@ namespace TCC.ViewModels
             {
                 if (_focus == value) return;
                 _focus = value;
-                NPC();
+                N();
             }
         }
         //public StanceTracker<ArcherStance> Stance
@@ -32,14 +33,14 @@ namespace TCC.ViewModels
         //        NPC();
         //    }
         //}
-        public FixedSkillCooldown Thunderbolt
+        public Cooldown Thunderbolt
         {
             get => _thunderbolt;
             set
             {
-                if(_thunderbolt == value) return;
+                if (_thunderbolt == value) return;
                 _thunderbolt = value;
-                NPC();
+                N();
             }
         }
         public DurationCooldownIndicator Windsong
@@ -49,17 +50,17 @@ namespace TCC.ViewModels
             {
                 if (_windsong == value) return;
                 _windsong = value;
-                NPC();
+                N();
             }
         }
-        public FixedSkillCooldown WindWalk
+        public Cooldown WindWalk
         {
             get => _windWalk;
             set
             {
                 if (_windWalk == value) return;
                 _windWalk = value;
-                NPC();
+                N();
             }
         }
         public bool WindWalkProc
@@ -69,7 +70,7 @@ namespace TCC.ViewModels
             {
                 if (_windWalkProc == value) return;
                 _windWalkProc = value;
-                NPC(nameof(WindWalkProc));
+                N(nameof(WindWalkProc));
             }
         }
 
@@ -84,26 +85,26 @@ namespace TCC.ViewModels
             SessionManager.SkillsDatabase.TryGetSkill(290100, Class.Archer, out var tb);    // Thunderbolt
             SessionManager.SkillsDatabase.TryGetSkill(350100, Class.Archer, out var ws);    // Windsong
             SessionManager.SkillsDatabase.TryGetSkill(340100, Class.Archer, out var ww);    // Wind Walk
-            Thunderbolt = new FixedSkillCooldown(tb, true);
+            Thunderbolt = new Cooldown(tb, true) { CanFlash = true };
             Windsong = new DurationCooldownIndicator(Dispatcher)
             {
-                Cooldown = new FixedSkillCooldown(ws, true),
-                Buff = new FixedSkillCooldown(ws, false)
+                Cooldown = new Cooldown(ws, true) { CanFlash = true },
+                Buff = new Cooldown(ws, false)
             };
-            WindWalk = new FixedSkillCooldown(ww, false);
+            WindWalk = new Cooldown(ww, false);
         }
 
 
-        public override bool StartSpecialSkill(SkillCooldown sk)
+        public override bool StartSpecialSkill(Cooldown sk)
         {
             if (sk.Skill.IconName == Thunderbolt.Skill.IconName)
             {
-                Thunderbolt.Start(sk.Cooldown);
+                Thunderbolt.Start(sk.Duration);
                 return true;
             }
             if (sk.Skill.IconName == Windsong.Cooldown.Skill.IconName)
             {
-                Windsong.Cooldown.Start(sk.Cooldown);
+                Windsong.Cooldown.Start(sk.Duration);
                 return true;
             }
             return false;
@@ -113,7 +114,23 @@ namespace TCC.ViewModels
         {
             if (skill.IconName == Thunderbolt.Skill.IconName)
             {
-                Thunderbolt.Refresh(0);
+                Thunderbolt.Refresh(0, CooldownMode.Normal);
+                return true;
+            }
+            return false;
+        }
+
+        public override void Dispose()
+        {
+            Windsong.Cooldown.Dispose();
+            Thunderbolt.Dispose();
+        }
+
+        public override bool ChangeSpecialSkill(Skill skill, uint cd)       // KR patch by HQ
+        {
+            if (skill.IconName == Thunderbolt.Skill.IconName)
+            {
+                Thunderbolt.Refresh(Thunderbolt.Skill.Id, cd, CooldownMode.Normal);
                 return true;
             }
             return false;

@@ -20,6 +20,7 @@
     <SolidColorBrush x:Key="ArcaneBrushLight"               Color="{StaticResource ArcaneColorLight}"                          />
     <SolidColorBrush x:Key="RageBrush"                      Color="{StaticResource RageColor}"                                 />
     <SolidColorBrush x:Key="RageBrushLight"                 Color="{StaticResource RageColorLight}"                            />
+    <SolidColorBrush x:Key="RageBrushDark"                  Color="{StaticResource RageColorDark}"                             />
     <SolidColorBrush x:Key="WillpowerBrush"                 Color="{StaticResource WillpowerColor}"                            />
     <SolidColorBrush x:Key="WillpowerBrushLight"            Color="{StaticResource WillpowerColorLight}"                       />
 
@@ -28,6 +29,7 @@
     <SolidColorBrush x:Key="CardDarkBrush"                  Color="{StaticResource CardDarkColor}"                             />
     <SolidColorBrush x:Key="TooltipBrush"                   Color="{StaticResource TooltipColor}"                Opacity=".9"  />
     <SolidColorBrush x:Key="RevampBackgroundBrush"          Color="{StaticResource RevampBackgroundColor}"                     />
+    <SolidColorBrush x:Key="RevampBackground70Brush"        Color="{StaticResource RevampBackgroundColor}"       Opacity=".7"  />
     <SolidColorBrush x:Key="RevampDarkBackgroundBrush"      Color="{StaticResource RevampDarkBackgroundColor}"                 />
     <SolidColorBrush x:Key="RevampDarkBackground70Brush"    Color="{StaticResource RevampDarkBackgroundColor}"   Opacity=".7"  />
     <SolidColorBrush x:Key="RevampDarkerBackgroundBrush"    Color="{StaticResource RevampDarkerBackgroundColor}"               />
@@ -50,7 +52,11 @@
     <SolidColorBrush x:Key="CopperBrush"                    Color="{StaticResource CopperColor}"                               />
                                                                                                                                
     <SolidColorBrush x:Key="AssaultStanceBrush"             Color="{StaticResource AssaultStanceColor}"                        />
+    <SolidColorBrush x:Key="AssaultStanceBrushLight"        Color="{StaticResource AssaultStanceColorLight}"                   />
+    <SolidColorBrush x:Key="AssaultStanceBrushDark"         Color="{StaticResource AssaultStanceColorDark}"                    />
     <SolidColorBrush x:Key="DefensiveStanceBrush"           Color="{StaticResource DefensiveStanceColor}"                      />
+    <SolidColorBrush x:Key="DefensiveStanceBrushLight"      Color="{StaticResource DefensiveStanceColorLight}"                 />
+    <SolidColorBrush x:Key="DefensiveStanceBrushDark"       Color="{StaticResource DefensiveStanceColorDark}"                  />
     <SolidColorBrush x:Key="SniperEyeBrush"                 Color="{StaticResource SniperEyeColor}"                            />
                                                                                                                                
     <SolidColorBrush x:Key="DpsRoleBrush"                   Color="{StaticResource DpsRoleColor}"                              />
@@ -62,7 +68,7 @@
     <SolidColorBrush x:Key="AquadraxBrush"                  Color="{StaticResource AquadraxColor}"                             />
     <SolidColorBrush x:Key="UmbradraxBrush"                 Color="{StaticResource UmbradraxColor}"                            />
                                                                                                                                
-    <SolidColorBrush x:Key="TierSoloDungeonBrush"           Color="{StaticResource TierSoloDungeonColor}"                      />
+    <SolidColorBrush x:Key="Tier1DungeonBrush"              Color="{StaticResource Tier1DungeonColor}"                         />
     <SolidColorBrush x:Key="Tier2DungeonBrush"              Color="{StaticResource Tier2DungeonColor}"                         />
     <SolidColorBrush x:Key="Tier3DungeonBrush"              Color="{StaticResource Tier3DungeonColor}"                         />
     <SolidColorBrush x:Key="Tier4DungeonBrush"              Color="{StaticResource Tier4DungeonColor}"                         />

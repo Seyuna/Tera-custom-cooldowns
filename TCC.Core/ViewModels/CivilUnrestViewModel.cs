@@ -21,7 +21,7 @@ namespace TCC.ViewModels
             {
                 if (_name == value) return;
                 _name = value;
-                NPC();
+                N();
             }
         }
 
@@ -33,7 +33,7 @@ namespace TCC.ViewModels
             {
                 if (_towerHp == value) return;
                 _towerHp = value;
-                NPC();
+                N();
             }
         }
         public uint TowersDestroyed
@@ -43,7 +43,7 @@ namespace TCC.ViewModels
             {
                 if (_towersDestroyed == value) return;
                 _towersDestroyed = value;
-                NPC();
+                N();
             }
         }
     }
@@ -59,7 +59,7 @@ namespace TCC.ViewModels
                 var ret = Utils.InitLiveView(p => p != null, _guilds, new string[] { },
                     new[]
                     {
-                        new SortDescription(nameof(CivilUnrestGuild.TowerHp), ListSortDirection.Descending),
+                        //new SortDescription(nameof(CivilUnrestGuild.TowerHp), ListSortDirection.Descending),
                         new SortDescription(nameof(CivilUnrestGuild.TowersDestroyed), ListSortDirection.Descending)
                     });
                 return ret;
@@ -105,13 +105,13 @@ namespace TCC.ViewModels
             {
                 g.TowerHp = guildInfo.TowerHp;
                 if (g.Name != "") return;
-                if(guildInfo.Self && InfoWindowViewModel.Instance.CurrentCharacter != null) g.Name = InfoWindowViewModel.Instance.CurrentCharacter.GuildName;
+                if(guildInfo.Self) g.Name = WindowManager.Dashboard.VM.CurrentCharacter?.GuildName;
                 //TODO: add kills and deaths?
             }
             else
             {
                 var name = "";
-                if (guildInfo.Self && InfoWindowViewModel.Instance.CurrentCharacter != null) name = InfoWindowViewModel.Instance.CurrentCharacter.GuildName;
+                if (guildInfo.Self) name = WindowManager.Dashboard.VM.CurrentCharacter?.GuildName;
                 _guilds.Add(new CivilUnrestGuild() { Id = guildInfo.Id, Name = name, TowerHp = guildInfo.TowerHp, TowersDestroyed = 0 });
             }
         }

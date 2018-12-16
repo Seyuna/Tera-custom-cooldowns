@@ -8,6 +8,8 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using GongSolutions.Wpf.DragDrop;
 using TCC.Data;
+using TCC.Data.Abnormalities;
+using TCC.Data.Skills;
 using TCC.ViewModels;
 
 namespace TCC.Windows
@@ -55,7 +57,7 @@ namespace TCC.Windows
             an.Completed += (s, ev) =>
             {
                 Hide();
-                if (Settings.ForceSoftwareRendering) RenderOptions.ProcessRenderMode = RenderMode.SoftwareOnly;
+                if (Settings.SettingsHolder.ForceSoftwareRendering) RenderOptions.ProcessRenderMode = RenderMode.SoftwareOnly;
             };
             BeginAnimation(OpacityProperty, an);
             CooldownWindowViewModel.Instance.Save();
@@ -63,7 +65,7 @@ namespace TCC.Windows
 
         internal void ShowWindow()
         {
-            if (Settings.ForceSoftwareRendering) RenderOptions.ProcessRenderMode = RenderMode.Default;
+            if (Settings.SettingsHolder.ForceSoftwareRendering) RenderOptions.ProcessRenderMode = RenderMode.Default;
             FocusManager.ForceFocused = true;
             WindowManager.ForegroundManager.ForceUndim = true;
             Dispatcher.Invoke(() =>
@@ -104,7 +106,7 @@ namespace TCC.Windows
 
         private void RemoveHiddenSkill(object sender, RoutedEventArgs e)
         {
-            CooldownWindowViewModel.Instance.HiddenSkills.Remove(((Button) sender).DataContext as Skill);
+            CooldownWindowViewModel.Instance.RemoveHiddenSkill(((Button) sender).DataContext as Cooldown);
         }
     }
 }

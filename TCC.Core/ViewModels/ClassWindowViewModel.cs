@@ -25,6 +25,7 @@ namespace TCC.ViewModels
                 _currentClass = value;
                 Dispatcher.Invoke(() =>
                 {
+                    CurrentManager.Dispose();
                     switch (_currentClass)
                     {
                         case Class.Warrior:
@@ -71,7 +72,7 @@ namespace TCC.ViewModels
                             break;
                     }
                 });
-                NPC();
+                N();
             }
         }
 
@@ -84,7 +85,7 @@ namespace TCC.ViewModels
                 if (_currentManager == value) return;
                 _currentManager = value;
                 Instance.CurrentManager = _currentManager;
-                NPC();
+                N();
                 CurrentManager.LoadSpecialSkills();
             }
         }
@@ -94,49 +95,13 @@ namespace TCC.ViewModels
             var result = false;
             WindowManager.ClassWindow.Dispatcher.Invoke(() =>
             {
-                if (((ClassWindowViewModel)WindowManager.ClassWindow.DataContext).CurrentManager != null) result = true;
+                if (((ClassWindowViewModel) WindowManager.ClassWindow.DataContext).CurrentManager != null)
+                    result = true;
                 else result = false;
             });
             return result;
         }
 
-        //public void StartCooldown(SkillCooldown skillCooldown)
-        //{
-        //    CurrentManager.Dispatcher.Invoke(() =>
-        //    {
-        //        CurrentManager.StartCooldown(skillCooldown);
-        //    });
-        //}
-        //public void ChangeSkillCooldown(Skill skill, uint cd)
-        //{
-        //    CurrentManager.Dispatcher.Invoke(() =>
-        //    {
-        //        CurrentManager.ChangeSkillCooldown(skill, cd);
-        //    });
-        //}
-        //public void ResetCooldown(SkillCooldown skillCooldown)
-        //{
-        //    CurrentManager.Dispatcher.Invoke(() =>
-        //    {
-        //        CurrentManager.ResetCooldown(skillCooldown);
-        //    });
-
-        //}
-        //public void RemoveSkill(Skill skill)
-        //{
-        //    CurrentManager.Dispatcher.Invoke(() =>
-        //    {
-        //        CurrentManager.RemoveSkill(skill);
-        //    });
-        //}
-        //internal void ClearSkills()
-        //{
-        //    if (CurrentManager == null) return;
-        //    CurrentManager.Dispatcher.Invoke(() =>
-        //    {
-        //        CurrentManager.OtherSkills.Clear();
-        //    });
-        //}
     }
 
     public class ClassWindowTemplateSelector : DataTemplateSelector

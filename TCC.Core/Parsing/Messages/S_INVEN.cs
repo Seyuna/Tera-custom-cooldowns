@@ -7,13 +7,25 @@ using TCC.TeraCommon.Game.Services;
 
 namespace TCC.Parsing.Messages
 {
+
     public class S_INVEN : ParsedMessage
     {
-        public static List<Tuple<uint, int, uint>> Items { get; private set; }
+        public class ItemAmount
+        {
+            public uint Id { get; set; }
+            public int Amount { get; set; }
+
+            public ItemAmount(uint id, int amount)
+            {
+                Id = id;
+                Amount = amount;
+            }
+        }
+        public static List<Tuple<uint, int, uint>> GearItems { get; private set; }
+        public static Dictionary<uint, ItemAmount> Items { get; private set; }
         public bool More { get; }
         public bool First { get; }
         public bool IsOpen { get; }
-        public static uint ElleonMarks { get; set; }
         public S_INVEN(TeraMessageReader reader) : base(reader)
         {
             //TODO
@@ -24,7 +36,11 @@ namespace TCC.Parsing.Messages
             IsOpen = reader.ReadBoolean();
             if (!IsOpen) return;
             First = reader.ReadBoolean();
-            if (First) Items = new List<Tuple<uint, int, uint>>();
+            if (First)
+            {
+                Items = new Dictionary<uint, ItemAmount>();
+                GearItems = new List<Tuple<uint, int, uint>>();
+            }
             More = reader.ReadBoolean();
             if (invOffset == 0) return;
             reader.BaseStream.Position = invOffset - 4;
@@ -41,11 +57,23 @@ namespace TCC.Parsing.Messages
                     var slot = reader.ReadUInt32();
                     if (slot > 39)
                     {
-                        if (itemId == 151643)
-                        {
-                            reader.Skip(4);
-                            ElleonMarks = reader.ReadUInt32();
-                        }
+                        reader.Skip(4);
+                        var amount = reader.ReadInt32();
+                        Items[slot] = new ItemAmount(itemId, amount);
+                        //switch (itemId)
+                        //{
+                        //    case 151643:
+                        //        ElleonMarks = reader.ReadUInt32();
+                        //        break;
+                        //    case 45474:
+                        //        DragonwingScales = reader.ReadUInt32();
+                        //        break;
+                        //    case 45482:
+                        //        PiecesOfDragonScroll = reader.ReadUInt32();
+                        //        break;
+                        //}
+
+                        if (next == 0) break;
                         reader.BaseStream.Position = next - 4;
                         continue;
                     }
@@ -53,7 +81,7 @@ namespace TCC.Parsing.Messages
                     var enchant = reader.ReadInt32();
                     reader.Skip(4 + 1 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 8 + 1 + 4 + 4 + 4 + 4 + 4 + 4 + 1 + 4 + 4 + 4 + 4 + 1 + 1);
                     var exp = reader.ReadUInt32();
-                    Items.Add(new Tuple<uint, int, uint>(itemId, enchant, exp));
+                    GearItems.Add(new Tuple<uint, int, uint>(itemId, enchant, exp));
                     reader.BaseStream.Position = next - 4;
                 }
 
@@ -62,6 +90,7 @@ namespace TCC.Parsing.Messages
             {
                 // ignored
             }
+
         }
     }
 }

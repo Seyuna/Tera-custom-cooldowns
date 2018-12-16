@@ -1,8 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using TCC.Data;
 using TCC.Data.Databases;
+using TCC.Tera.Data;
+using TCC.TeraCommon.Game;
 using TCC.ViewModels;
+using Player = TCC.Data.Pc.Player;
 
 namespace TCC
 {
@@ -13,10 +17,13 @@ namespace TCC
         public const int MaxGuardianQuests = 40;
         private static bool _logged;
         private static bool _loadingScreen = true;
-
         private static bool _encounter;
         private static bool _inGameChatOpen;
         private static bool _inGameUiOn;
+
+        public static Server Server { get; set; }
+        public static string Language => BasicTeraData.Instance.Servers.StringLanguage;
+
 
         public static bool LoadingScreen
         {
@@ -41,7 +48,15 @@ namespace TCC
             }
         }
 
-        public static bool Combat => CurrentPlayer?.IsInCombat ?? false;
+        public static bool Combat
+        {
+            get => CurrentPlayer?.IsInCombat ?? false;
+            set
+            {
+                if (Combat != value) App.BaseDispatcher.Invoke(() => CombatChanged?.Invoke());
+                CurrentPlayer.IsInCombat = value;
+            }
+        }
 
         public static bool Logged
         {
@@ -86,6 +101,13 @@ namespace TCC
 
         public static readonly Player CurrentPlayer = new Player();
 
+        public static readonly Dictionary<uint, string> GuildMembersNames = new Dictionary<uint, string>();
+
+        public static string GetGuildMemberName(uint id)
+        {
+            return GuildMembersNames.ContainsKey(id) ? GuildMembersNames[id] : "Unknown player";
+        }
+
         public static AccountBenefitDatabase AccountBenefitDatabase { get; private set; }
         public static MonsterDatabase MonsterDatabase { get; private set; }
         public static ItemsDatabase ItemsDatabase { get; private set; }
@@ -101,22 +123,12 @@ namespace TCC
         public static SocialDatabase SocialDatabase { get; private set; }
         public static bool CivilUnrestZone { get; internal set; }
 
-        public static void SetCombatStatus(ulong target, bool combat)
-        {
-            if (target == CurrentPlayer.EntityId)
-            {
-                var old = CurrentPlayer.IsInCombat;
-                if (combat)
-                {
-                    CurrentPlayer.IsInCombat = true;
-                }
-                else
-                {
-                    CurrentPlayer.IsInCombat = false;
-                }
-                if (combat != old) App.BaseDispatcher.Invoke(() => CombatChanged?.Invoke());
-            }
-        }
+        //public static void SetCombatStatus(bool combat)
+        //{
+        //    //var old = Me.IsInCombat;
+        //    //Me.IsInCombat = combat;
+        //    //if (combat != old) App.BaseDispatcher.Invoke(() => CombatChanged?.Invoke());
+        //}
         public static void SetPlayerHp(float hp)
         {
             CurrentPlayer.CurrentHP = hp;
@@ -130,7 +142,7 @@ namespace TCC
         {
             if (target != CurrentPlayer.EntityId) return;
             CurrentPlayer.CurrentST = st;
-            if (Settings.ClassWindowSettings.Enabled) ClassWindowViewModel.Instance.CurrentManager.SetST(Convert.ToInt32(st));
+            if (Settings.SettingsHolder.ClassWindowSettings.Enabled) ClassWindowViewModel.Instance.CurrentManager.SetST(Convert.ToInt32(st));
         }
         public static void SetPlayerFe(float en)
         {
@@ -141,7 +153,7 @@ namespace TCC
         {
             try
             {
-                p.Laurel = InfoWindowViewModel.Instance.Characters.First(x => x.Name == p.Name).Laurel;
+                p.Laurel = WindowManager.Dashboard.VM.Characters.First(x => x.Name == p.Name).Laurel;
             }
             catch
             {
@@ -165,7 +177,7 @@ namespace TCC
         {
             if (target != CurrentPlayer.EntityId) return;
             CurrentPlayer.MaxST = maxSt;
-            if (Settings.ClassWindowSettings.Enabled) ClassWindowViewModel.Instance.CurrentManager.SetMaxST(Convert.ToInt32(maxSt));
+            if (Settings.SettingsHolder.ClassWindowSettings.Enabled) ClassWindowViewModel.Instance.CurrentManager.SetMaxST(Convert.ToInt32(maxSt));
         }
 
         public static void SetPlayerShield(uint damage)
@@ -203,10 +215,24 @@ namespace TCC
             CurrentPlayer.Ice = pIce;
             CurrentPlayer.Arcane = pArcane;
             
-            if (Settings.ClassWindowSettings.Enabled && CurrentPlayer.Class == Class.Sorcerer)
+            if (Settings.SettingsHolder.ClassWindowSettings.Enabled && CurrentPlayer.Class == Class.Sorcerer)
             {
-                ((SorcererBarManager)ClassWindowViewModel.Instance.CurrentManager).NotiftElementChanged();
+                ((SorcererBarManager)ClassWindowViewModel.Instance.CurrentManager).NotifyElementChanged();
             }
+
+        }
+
+        public static void SetSorcererElementsBoost(bool f, bool i, bool a)
+        {
+            CurrentPlayer.FireBoost = f;
+            CurrentPlayer.IceBoost = i;
+            CurrentPlayer.ArcaneBoost = a;
+
+            if (Settings.SettingsHolder.ClassWindowSettings.Enabled && CurrentPlayer.Class == Class.Sorcerer)
+            {
+                ((SorcererBarManager)ClassWindowViewModel.Instance.CurrentManager).NotifyElementBoostChanged();
+            }
+
 
         }
     }

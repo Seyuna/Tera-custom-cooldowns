@@ -1,5 +1,6 @@
 ﻿using TCC.ClassSpecific;
 using TCC.Data;
+using TCC.Data.Skills;
 
 namespace TCC.ViewModels
 {
@@ -12,9 +13,9 @@ namespace TCC.ViewModels
             get => _energyStars;
             set
             {
-                if(_energyStars == value) return;
+                if (_energyStars == value) return;
                 _energyStars = value;
-                NPC();
+                N();
             }
         }
 
@@ -27,92 +28,105 @@ namespace TCC.ViewModels
         public sealed override void LoadSpecialSkills()
         {
             //Energy Stars
-            EnergyStars = new DurationCooldownIndicator(Dispatcher);
             SessionManager.SkillsDatabase.TryGetSkill(350410, Class.Priest, out var es);
-            EnergyStars.Buff = new FixedSkillCooldown(es,  false);
-            EnergyStars.Cooldown = new FixedSkillCooldown(es,  true);
+            EnergyStars = new DurationCooldownIndicator(Dispatcher)
+            {
+                Buff = new Cooldown(es, false),
+                Cooldown = new Cooldown(es, true) {CanFlash = true}
+            };
 
-            Grace = new DurationCooldownIndicator(Dispatcher);
             SessionManager.SkillsDatabase.TryGetSkill(390100, Class.Priest, out var gr);
-            Grace.Buff = new FixedSkillCooldown(gr,  false);
-            Grace.Cooldown = new FixedSkillCooldown(gr, true);
+            Grace = new DurationCooldownIndicator(Dispatcher)
+            {
+                Buff = new Cooldown(gr, false),
+                Cooldown = new Cooldown(gr, true) {CanFlash = true}
+            };
 
             Grace.Buff.Started += OnGraceBuffStarted;
             Grace.Buff.Ended += OnGraceBuffEnded;
 
             // Edict Of Judgment
-            EdictOfJudgment = new DurationCooldownIndicator(Dispatcher);
             SessionManager.SkillsDatabase.TryGetSkill(430100, Class.Priest, out var ed);
-            EdictOfJudgment.Buff = new FixedSkillCooldown(ed, false);
-            EdictOfJudgment.Cooldown = new FixedSkillCooldown(ed, true);
+            EdictOfJudgment = new DurationCooldownIndicator(Dispatcher)
+            {
+                Buff = new Cooldown(ed, false),
+                Cooldown = new Cooldown(ed, true) {CanFlash = true}
+            };
 
             EdictOfJudgment.Buff.Started += OnEdictBuffStarted;
             EdictOfJudgment.Buff.Ended += OnEdictBuffEnded;
 
             // Divine Charge
-            DivineCharge = new DurationCooldownIndicator(Dispatcher);
             SessionManager.SkillsDatabase.TryGetSkill(280200, Class.Priest, out var dc);
-            DivineCharge.Cooldown = new FixedSkillCooldown(dc, true);
+            DivineCharge = new DurationCooldownIndicator(Dispatcher)
+            {
+                Cooldown = new Cooldown(dc, true) {CanFlash = true}
+            };
 
             // Tripple Nenesis
             SessionManager.SkillsDatabase.TryGetSkill(290100, Class.Priest, out var tn);
             TripleNemesis = new DurationCooldownIndicator(Dispatcher)
             {
-                Cooldown = new FixedSkillCooldown(tn, false),
-                Buff = new FixedSkillCooldown(tn, false)
+                Cooldown = new Cooldown(tn, false) {CanFlash = true},
+                Buff = new Cooldown(tn, false)
             };
 
-            ClassAbnormalityTracker.MarkingExpired+= OnTripleNemesisExpired;
-            ClassAbnormalityTracker.MarkingRefreshed+= OnTripleNemesisRefreshed;
+            ClassAbnormalityTracker.MarkingExpired += OnTripleNemesisExpired;
+            ClassAbnormalityTracker.MarkingRefreshed += OnTripleNemesisRefreshed;
         }
 
         private void OnTripleNemesisRefreshed(ulong duration)
         {
-            TripleNemesis.Buff.Refresh(duration);
+            TripleNemesis.Buff.Refresh(duration, CooldownMode.Normal);
             TripleNemesis.Cooldown.FlashOnAvailable = false;
 
         }
 
         private void OnTripleNemesisExpired()
         {
-            TripleNemesis.Buff.Refresh(0);
+            TripleNemesis.Buff.Refresh(0, CooldownMode.Normal);
             TripleNemesis.Cooldown.FlashOnAvailable = true;
 
         }
 
         private void OnGraceBuffEnded(CooldownMode obj) => Grace.Cooldown.FlashOnAvailable = true;
         private void OnGraceBuffStarted(CooldownMode obj) => Grace.Cooldown.FlashOnAvailable = false;
-        
+
         private void OnEdictBuffEnded(CooldownMode obj) => EdictOfJudgment.Cooldown.FlashOnAvailable = true;
         private void OnEdictBuffStarted(CooldownMode obj) => EdictOfJudgment.Cooldown.FlashOnAvailable = false;
 
-        public override bool StartSpecialSkill(SkillCooldown sk)
+        public override bool StartSpecialSkill(Cooldown sk)
         {
-            if(sk.Skill.IconName == EnergyStars.Cooldown.Skill.IconName)
+            if (sk.Skill.IconName == EnergyStars.Cooldown.Skill.IconName)
             {
-                EnergyStars.Cooldown.Start(sk.Cooldown);
+                EnergyStars.Cooldown.Start(sk.Duration);
                 return true;
             }
+
             if (sk.Skill.IconName == Grace.Cooldown.Skill.IconName)
             {
-                Grace.Cooldown.Start(sk.Cooldown);
+                Grace.Cooldown.Start(sk.Duration);
                 return true;
             }
+
             if (sk.Skill.IconName == EdictOfJudgment.Cooldown.Skill.IconName)
             {
-                EdictOfJudgment.Cooldown.Start(sk.Cooldown);
+                EdictOfJudgment.Cooldown.Start(sk.Duration);
                 return true;
             }
+
             if (sk.Skill.IconName == DivineCharge.Cooldown.Skill.IconName)
             {
-                DivineCharge.Cooldown.Start(sk.Cooldown);
+                DivineCharge.Cooldown.Start(sk.Duration);
                 return true;
             }
+
             if (sk.Skill.IconName == TripleNemesis.Cooldown.Skill.IconName)
             {
-                TripleNemesis.Cooldown.Start(sk.Cooldown);
+                TripleNemesis.Cooldown.Start(sk.Duration);
                 return true;
             }
+
             return false;
         }
 
@@ -120,10 +134,19 @@ namespace TCC.ViewModels
         {
             if (skill.IconName == EdictOfJudgment.Cooldown.Skill.IconName)
             {
-                EdictOfJudgment.Cooldown.Refresh(skill.Id, cd);
+                EdictOfJudgment.Cooldown.Refresh(skill.Id, cd, CooldownMode.Normal);
                 return true;
             }
+
             return false;
+        }
+
+        public override void Dispose()
+        {
+            Grace.Cooldown.Dispose();
+            EdictOfJudgment.Cooldown.Dispose();
+            DivineCharge.Cooldown.Dispose();
+            TripleNemesis.Cooldown.Dispose();
         }
     }
 }

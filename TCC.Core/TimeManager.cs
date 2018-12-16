@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
 using TCC.Data;
-using TCC.Parsing;
+using TCC.Settings;
 using TCC.ViewModels;
 using TCC.Windows;
 
@@ -50,16 +50,16 @@ namespace TCC
 
         private void CheckCloseEvents()
         {
-            var closeEventsCount = InfoWindowViewModel.Instance.EventGroups.Count(evGroup => evGroup.Events.Any(x => x.IsClose));
+            var closeEventsCount = WindowManager.Dashboard.VM.EventGroups.Count(evGroup => evGroup.Events.Any(x => x.IsClose));
             if (closeEventsCount == 0) return;
-            WindowManager.FloatingButton.StartNotifying(closeEventsCount);
+            if(SettingsHolder.ShowNotificationBubble) WindowManager.FloatingButton.StartNotifying(closeEventsCount);
 
         }
 
         private void CheckNewDay(object sender, EventArgs e)
         {
             if (CurrentServerTime.Hour == 0 && CurrentServerTime.Minute == 0)
-                InfoWindowViewModel.Instance.LoadEvents(CurrentServerTime.DayOfWeek, CurrentRegion);
+                WindowManager.Dashboard.VM.LoadEvents(CurrentServerTime.DayOfWeek, CurrentRegion);
             if (CurrentServerTime.Second == 0 && CurrentServerTime.Minute % 3 == 0) CheckCloseEvents();
         }
 
@@ -68,11 +68,11 @@ namespace TCC
             if (string.IsNullOrEmpty(region)) return;
             CurrentRegion = region.StartsWith("EU") ? "EU" : region;
 
-            Settings.LastRegion = region;
+            SettingsHolder.LastRegion = region;
             if (!_serverTimezones.ContainsKey(CurrentRegion))
             {
                 CurrentRegion = "EU";
-                Settings.LastRegion = "EU-EN";
+                SettingsHolder.LastRegion = "EU-EN";
                 TccMessageBox.Show("TCC",
                     "Current region could not be detected, so TCC will load EU-EN database. To force a specific language, use Region Override setting in Misc Settings.",
                     MessageBoxButton.OK);
@@ -89,13 +89,13 @@ namespace TCC
                 ServerHourOffsetFromLocal = -TimeZone.CurrentTimeZone.GetUtcOffset(DateTime.Now).Hours + ServerHourOffsetFromUtc;
             }
 
-            if (InfoWindowViewModel.Instance.Markers.FirstOrDefault(x => x.Name.Equals(CurrentRegion + " server time")) == null)
+            if (WindowManager.Dashboard.VM.Markers.FirstOrDefault(x => x.Name.Equals(CurrentRegion + " server time")) == null)
             {
-                InfoWindowViewModel.Instance.Markers.Add(new TimeMarker(ServerHourOffsetFromLocal, CurrentRegion + " server time"));
+                WindowManager.Dashboard.VM.Markers.Add(new TimeMarker(ServerHourOffsetFromLocal, CurrentRegion + " server time"));
             }
 
             CheckReset();
-            InfoWindowViewModel.Instance.LoadEvents(DateTime.Now.DayOfWeek, CurrentRegion);
+            WindowManager.Dashboard.VM.LoadEvents(DateTime.Now.DayOfWeek, CurrentRegion);
 
         }
 
@@ -103,27 +103,27 @@ namespace TCC
         {
             if (CurrentRegion == null) return;
             var todayReset = DateTime.Today.AddHours(ResetHour + ServerHourOffsetFromLocal);
-            if (Settings.LastRun > todayReset || DateTime.Now < todayReset) return;
-            foreach (var ch in InfoWindowViewModel.Instance.Characters)
+            if (SettingsHolder.LastRun > todayReset || DateTime.Now < todayReset) return;
+            foreach (var ch in WindowManager.Dashboard.VM.Characters)
             {
                 foreach (var dg in ch.Dungeons)
                 {
-                    if (dg.Id == 9950)
+                    if (dg.Dungeon.Id == 9950)
                     {
                         if (DateTime.Now.DayOfWeek == DayOfWeek.Thursday) dg.Reset();
                         else continue;
                     }
                     dg.Reset();
                 }
-                ch.DailiesDone = 0;
+                ch.VanguardDailiesDone = 0;
                 ch.ClaimedGuardianQuests = 0;
                 if (DateTime.Now.DayOfWeek == _resetDay)
                 {
-                    ch.WeekliesDone = 0;
+                    ch.VanguardWeekliesDone = 0;
                 }
             }
-            Settings.LastRun = DateTime.Now;
-            InfoWindowViewModel.Instance.SaveToFile();
+            SettingsHolder.LastRun = DateTime.Now;
+            WindowManager.Dashboard.VM.SaveCharacters();
             SettingsWriter.Save();
             if (DateTime.Now.DayOfWeek == _resetDay)
             {
@@ -140,7 +140,7 @@ namespace TCC
             {
                 var sb = new StringBuilder(BaseUrl);
                 sb.Append("?srv=");
-                sb.Append(PacketProcessor.Server.ServerId);
+                sb.Append(SessionManager.Server.ServerId);
                 sb.Append("&reg=");
                 sb.Append(CurrentRegion);
                 ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
@@ -166,7 +166,7 @@ namespace TCC
         {
             var sb = new StringBuilder(BaseUrl);
             sb.Append("?srv=");
-            sb.Append(PacketProcessor.Server.ServerId);
+            sb.Append(SessionManager.Server.ServerId);
             sb.Append("&reg=");
             sb.Append(CurrentRegion);
             sb.Append("&post");
@@ -197,7 +197,7 @@ namespace TCC
 
         public void SetGuildBamTime(bool force)
         {
-            foreach (var eg in InfoWindowViewModel.Instance.EventGroups.ToSyncArray().Where(x => x.RemoteCheck))
+            foreach (var eg in WindowManager.Dashboard.VM.EventGroups.ToSyncArray().Where(x => x.RemoteCheck))
             {
                 foreach (var ev in eg.Events.ToSyncArray())
                 {
@@ -208,12 +208,12 @@ namespace TCC
 
         public void SendWebhookMessageOld(bool testMessage = false)
         {
-            if (!string.IsNullOrEmpty(Settings.Webhook))
+            if (!string.IsNullOrEmpty(SettingsHolder.Webhook))
             {
                 var sb = new StringBuilder("{");
                 sb.Append("\""); sb.Append("content"); sb.Append("\"");
                 sb.Append(":");
-                sb.Append("\""); sb.Append(Settings.WebhookMessage);
+                sb.Append("\""); sb.Append(SettingsHolder.WebhookMessage);
                 if (testMessage) sb.Append(" (Test message)");
                 sb.Append("\"");
                 sb.Append(",");
@@ -236,7 +236,7 @@ namespace TCC
                         client.Headers.Add(HttpRequestHeader.UserAgent, "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36");
                         client.Headers.Add(HttpRequestHeader.ContentType, "application/json");
 
-                        client.UploadString(Settings.Webhook, "POST", sb.ToString());
+                        client.UploadString(SettingsHolder.Webhook, "POST", sb.ToString());
                     }
                 }
                 catch (Exception)
@@ -248,11 +248,11 @@ namespace TCC
         }
         public void SendWebhookMessage(string bamName)
         {
-            if (!string.IsNullOrEmpty(Settings.Webhook))
+            if (!string.IsNullOrEmpty(SettingsHolder.Webhook))
             {
-                var msg = Settings.WebhookMessage.IndexOf("{npc_name}", StringComparison.Ordinal) > -1
-                    ? Settings.WebhookMessage.Replace("{npc_name}", bamName)
-                    : Settings.WebhookMessage;
+                var msg = SettingsHolder.WebhookMessage.IndexOf("{npc_name}", StringComparison.Ordinal) > -1
+                    ? SettingsHolder.WebhookMessage.Replace("{npc_name}", bamName)
+                    : SettingsHolder.WebhookMessage;
                 var sb = new StringBuilder("{");
                 sb.Append("\""); sb.Append("content"); sb.Append("\"");
                 sb.Append(":");
@@ -276,7 +276,7 @@ namespace TCC
                         client.Headers.Add(HttpRequestHeader.UserAgent, "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36");
 
                         client.Headers.Add(HttpRequestHeader.ContentType, "application/json");
-                        client.UploadString(Settings.Webhook, "POST", sb.ToString());
+                        client.UploadString(SettingsHolder.Webhook, "POST", sb.ToString());
                     }
                 }
                 catch (Exception)

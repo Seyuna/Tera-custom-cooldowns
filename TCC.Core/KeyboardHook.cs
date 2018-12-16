@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
-using TCC.Parsing;
-using TCC.ViewModels;
+using TCC.Data;
 
 namespace TCC
 {
@@ -38,38 +37,34 @@ namespace TCC
 
         private static void hook_KeyPressed(object sender, KeyPressedEventArgs e)
         {
-            if (e.Key == Settings.LfgHotkey.Key && e.Modifier == Settings.LfgHotkey.Modifier)
+            if (e.Key == Settings.SettingsHolder.LfgHotkey.Key && e.Modifier == Settings.SettingsHolder.LfgHotkey.Modifier)
             {
-                if (!Proxy.IsConnected) return;
+                if (!Proxy.Proxy.IsConnected) return;
 
-                if (!WindowManager.LfgListWindow.IsVisible) Proxy.RequestLfgList();
+                if (!WindowManager.LfgListWindow.IsVisible) Proxy.Proxy.RequestLfgList();
                 else WindowManager.LfgListWindow.CloseWindow();
             }
-            if (e.Key == Settings.SettingsHotkey.Key && e.Modifier == Settings.SettingsHotkey.Modifier)
+            if (e.Key == Settings.SettingsHolder.SettingsHotkey.Key && e.Modifier == Settings.SettingsHolder.SettingsHotkey.Modifier)
             {
                 if (WindowManager.SettingsWindow.IsVisible) WindowManager.SettingsWindow.HideWindow();
                 else WindowManager.SettingsWindow.ShowWindow();
             }
-            if (e.Key == Settings.InfoWindowHotkey.Key && e.Modifier == Settings.InfoWindowHotkey.Modifier)
+            if (e.Key == Settings.SettingsHolder.InfoWindowHotkey.Key && e.Modifier == Settings.SettingsHolder.InfoWindowHotkey.Modifier)
             {
-                if (WindowManager.InfoWindow.IsVisible) WindowManager.InfoWindow.HideWindow();
-                else InfoWindowViewModel.Instance.ShowWindow();
-            }
-            if (e.Key == Settings.ShowAllHotkey.Key && e.Modifier == Settings.ShowAllHotkey.Modifier)
-            {
-
+                if (WindowManager.Dashboard.IsVisible) WindowManager.Dashboard.HideWindow();
+                else WindowManager.Dashboard.ShowWindow();
             }
             if (e.Key == Keys.K && e.Modifier == ModifierKeys.Control)
             {
                 if (WindowManager.SkillConfigWindow.IsVisible) WindowManager.SkillConfigWindow.Close();
                 else WindowManager.SkillConfigWindow.ShowWindow();
             }
-            if (e.Key == Settings.LootSettingsHotkey.Key && e.Modifier == Settings.LootSettingsHotkey.Modifier)
-            {
-                if (!GroupWindowViewModel.Instance.AmILeader) return;
-                if (!Proxy.IsConnected) return;
-                Proxy.LootSettings();
-            }
+            //if (e.Key == Settings.Settings.LootSettingsHotkey.Key && e.Modifier == Settings.Settings.LootSettingsHotkey.Modifier)
+            //{
+            //    if (!GroupWindowViewModel.Instance.AmILeader) return;
+            //    if (!Proxy.Proxy.IsConnected) return;
+            //    Proxy.Proxy.LootSettings();
+            //}
             
         }
 
@@ -117,10 +112,10 @@ namespace TCC
 
         private void Register()
         {
-            RegisterHotKey(Settings.LfgHotkey.Modifier, Settings.LfgHotkey.Key);
-            RegisterHotKey(Settings.InfoWindowHotkey.Modifier, Settings.InfoWindowHotkey.Key);
-            RegisterHotKey(Settings.SettingsHotkey.Modifier, Settings.SettingsHotkey.Key);
-            RegisterHotKey(Settings.LootSettingsHotkey.Modifier, Settings.LootSettingsHotkey.Key);
+            RegisterHotKey(Settings.SettingsHolder.LfgHotkey.Modifier, Settings.SettingsHolder.LfgHotkey.Key);
+            RegisterHotKey(Settings.SettingsHolder.InfoWindowHotkey.Modifier, Settings.SettingsHolder.InfoWindowHotkey.Key);
+            RegisterHotKey(Settings.SettingsHolder.SettingsHotkey.Modifier, Settings.SettingsHolder.SettingsHotkey.Key);
+            RegisterHotKey(Settings.SettingsHolder.LootSettingsHotkey.Modifier, Settings.SettingsHolder.LootSettingsHotkey.Key);
             RegisterHotKey(ModifierKeys.Control, Keys.K);
             //RegisterHotKey(Settings.ShowAllHotkey.Modifier, Settings.ShowAllHotkey.Key);
 

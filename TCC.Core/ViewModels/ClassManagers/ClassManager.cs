@@ -1,11 +1,13 @@
-﻿using System.Windows.Threading;
+﻿using System;
+using System.Windows.Threading;
 using TCC.Data;
+using TCC.Data.Skills;
 
 namespace TCC.ViewModels
 {
-    public abstract class ClassManager : TSPropertyChanged
+    public abstract class ClassManager : TSPropertyChanged, IDisposable
     {
-        public virtual bool StartSpecialSkill(SkillCooldown sk)
+        public virtual bool StartSpecialSkill(Cooldown sk)
         {
             return false;
         }
@@ -27,13 +29,13 @@ namespace TCC.ViewModels
 
         public void SetMaxST(int v)
         {
-            if (!Settings.ClassWindowSettings.Enabled) return;
+            if (!Settings.SettingsHolder.ClassWindowSettings.Enabled) return;
             StaminaTracker.Max = v;
         }
 
         public void SetST(int currentStamina)
         {
-            if (!Settings.ClassWindowSettings.Enabled) return;
+            if (!Settings.SettingsHolder.ClassWindowSettings.Enabled) return;
             StaminaTracker.Val = currentStamina;
         }
         public ClassManager()
@@ -42,6 +44,10 @@ namespace TCC.ViewModels
             StaminaTracker = new StatTracker();
         }
 
+        public virtual void Dispose()
+        {
+
+        }
     }
 }
 

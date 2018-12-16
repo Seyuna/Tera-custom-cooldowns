@@ -1,4 +1,5 @@
 ﻿using TCC.Data;
+using TCC.Data.Skills;
 
 namespace TCC.ViewModels
 {
@@ -6,8 +7,8 @@ namespace TCC.ViewModels
     {
         private bool _focusOn;
 
-        public FixedSkillCooldown BurningHeart { get; set; }
-        public FixedSkillCooldown FireAvalanche { get; set; }
+        public Cooldown BurningHeart { get; set; }
+        public Cooldown FireAvalanche { get; set; }
         public DurationCooldownIndicator InnerHarmony { get; set; }
 
         public bool FocusOn
@@ -17,7 +18,7 @@ namespace TCC.ViewModels
             {
                 if (_focusOn == value) return;
                 _focusOn = value;
-                NPC(nameof(FocusOn));
+                N();
             }
 
         }
@@ -36,32 +37,43 @@ namespace TCC.ViewModels
             SessionManager.SkillsDatabase.TryGetSkill(150700, Class.Ninja, out var bh);
             SessionManager.SkillsDatabase.TryGetSkill(80200, Class.Ninja, out var fa);
             SessionManager.SkillsDatabase.TryGetSkill(230100, Class.Ninja, out var ih);
-            BurningHeart = new FixedSkillCooldown(bh,  false);
-            FireAvalanche = new FixedSkillCooldown(fa,  false);
 
-            InnerHarmony = new DurationCooldownIndicator(Dispatcher);
-            InnerHarmony.Cooldown = new FixedSkillCooldown(ih, true);
-            InnerHarmony.Buff = new FixedSkillCooldown(ih, false);
+            BurningHeart = new Cooldown(bh,  false) { CanFlash = true };
+            FireAvalanche = new Cooldown(fa,  false) { CanFlash = true };
+
+            InnerHarmony = new DurationCooldownIndicator(Dispatcher)
+            {
+                Cooldown = new Cooldown(ih, true) {CanFlash = true},
+                Buff = new Cooldown(ih, false)
+            };
 
             StaminaTracker.PropertyChanged += FlashOnMaxSt;
 
         }
 
-        public override bool StartSpecialSkill(SkillCooldown sk)
+        public override void Dispose()
+        {
+            BurningHeart.Dispose();
+            FireAvalanche.Dispose();
+            InnerHarmony.Cooldown.Dispose();
+            
+        }
+
+        public override bool StartSpecialSkill(Cooldown sk)
         {
             if (sk.Skill.IconName == FireAvalanche.Skill.IconName)
             {
-                FireAvalanche.Start(sk.Cooldown);
+                FireAvalanche.Start(sk.Duration);
                 return true;
             }
             if (sk.Skill.IconName == BurningHeart.Skill.IconName)
             {
-                BurningHeart.Start(sk.Cooldown);
+                BurningHeart.Start(sk.Duration);
                 return true;
             }
             if (sk.Skill.IconName == InnerHarmony.Cooldown.Skill.IconName)
             {
-                InnerHarmony.Cooldown.Start(sk.Cooldown);
+                InnerHarmony.Cooldown.Start(sk.Duration);
                 return true;
             }
             return false;

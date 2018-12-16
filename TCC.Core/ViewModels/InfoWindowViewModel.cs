@@ -8,6 +8,9 @@ using System.Windows;
 using System.Windows.Threading;
 using System.Xml.Linq;
 using TCC.Data;
+using TCC.Data.Abnormalities;
+using TCC.Data.Map;
+using TCC.Data.Pc;
 using TCC.Parsing.Messages;
 using TCC.Windows;
 using MessageBoxImage = TCC.Data.MessageBoxImage;
@@ -16,20 +19,7 @@ namespace TCC.ViewModels
 {
     public class InfoWindowViewModel : TSPropertyChanged
     {
-        private static InfoWindowViewModel _instance;
-        private uint _selectedCharacterId;
-        public bool DiscardFirstVanguardPacket = true;
-        public static InfoWindowViewModel Instance => _instance ?? (_instance = new InfoWindowViewModel());
-        public SynchronizedObservableCollection<Character> Characters { get; set; }
-        public SynchronizedObservableCollection<EventGroup> EventGroups { get; }
-        public SynchronizedObservableCollection<TimeMarker> Markers { get; }
-        // ReSharper disable once CollectionNeverQueried.Global
-        public SynchronizedObservableCollection<DailyEvent> SpecialEvents { get; }
-        public Character CurrentCharacter => Characters.ToSyncArray().FirstOrDefault(x => x.Id == SessionManager.CurrentPlayer.PlayerId);
 
-        public Character SelectedCharacter => Characters.ToSyncArray().FirstOrDefault(x => x.Id == _selectedCharacterId);
-        public bool SelectedCharacterExists => SelectedCharacter != null;
-        public bool ShowElleonMarks => TimeManager.Instance.CurrentRegion == "EU";
         public InfoWindowViewModel()
         {
             Dispatcher = Dispatcher.CurrentDispatcher;
@@ -39,9 +29,276 @@ namespace TCC.ViewModels
             SpecialEvents = new SynchronizedObservableCollection<DailyEvent>(Dispatcher);
             LoadCharDoc();
             if (Characters.Count > 0) SelectCharacter(Characters[0]);
-            else SelectCharacter(new Character("", Class.None, 0, 0, Dispatcher));
+            else SelectCharacter(new Character());
         }
 
+
+
+
+
+        /* -- DEPRECATED ------------------------------------------- */
+        private static InfoWindowViewModel _instance;
+        public static InfoWindowViewModel Instance => _instance ?? (_instance = new InfoWindowViewModel());
+
+        public void ShowWindow()
+        {
+            if (!Dispatcher.Thread.IsAlive) return;
+            //LoadEvents(DateTime.Now.DayOfWeek, TimeManager.Instance.CurrentRegion);
+            WindowManager.Dashboard.ShowWindow();
+            N(nameof(SelectedCharacterExists));
+            //SelectCharacter(SelectedCharacter);
+        }
+        public bool SelectedCharacterExists => SelectedCharacter != null;
+        public Character SelectedCharacter => Characters.ToSyncArray().FirstOrDefault(x => x.Id == _selectedCharacterId);
+        private uint _selectedCharacterId;
+        public void SelectCharacter(Character c)
+        {
+            if (c == null) return;
+            _selectedCharacterId = c.Id;
+            foreach (var ch in Characters)
+            {
+                if (ch.Id == c.Id) ch.IsSelected = true;
+                else ch.IsSelected = false;
+            }
+            N(nameof(SelectedCharacter));
+
+            //AllDungeons = new CollectionViewSource { Source = SelectedCharacter.Dungeons }.View;
+            //SoloDungs = new CollectionViewSource { Source = SelectedCharacter.Dungeons }.View;
+            //T2Dungs = new CollectionViewSource { Source = SelectedCharacter.Dungeons }.View;
+            //T3Dungs = new CollectionViewSource { Source = SelectedCharacter.Dungeons }.View;
+            //T4Dungs = new CollectionViewSource { Source = SelectedCharacter.Dungeons }.View;
+            //T5Dungs = new CollectionViewSource { Source = SelectedCharacter.Dungeons }.View;
+            //Items = new CollectionViewSource { Source = SelectedCharacter.Gear }.View;
+
+            //AllDungeons.Filter = null;
+            //Items.Filter = null;
+            //SoloDungs.Filter = d => DungeonDatabase.Instance.Dungeons[((DungeonCooldown)d).Id].Tier == DungeonTier.Solo;
+            //T2Dungs.Filter = d => DungeonDatabase.Instance.  Dungeons[((DungeonCooldown)d).Id].Tier == DungeonTier.Tier2;
+            //T3Dungs.Filter = d => DungeonDatabase.Instance.  Dungeons[((DungeonCooldown)d).Id].Tier == DungeonTier.Tier3;
+            //T4Dungs.Filter = d => DungeonDatabase.Instance.  Dungeons[((DungeonCooldown)d).Id].Tier == DungeonTier.Tier4;
+            //T5Dungs.Filter = d => DungeonDatabase.Instance.  Dungeons[((DungeonCooldown)d).Id].Tier == DungeonTier.Tier5;
+
+            //AllDungeons.SortDescriptions.Add(new SortDescription("Tier", ListSortDirection.Ascending));
+            //Items.SortDescriptions.Add(new SortDescription("Piece", ListSortDirection.Ascending));
+
+            //NotifyPropertyChanged(nameof(AllDungeons));
+            //NotifyPropertyChanged(nameof(SoloDungs));
+            //NotifyPropertyChanged(nameof(T2Dungs));
+            //NotifyPropertyChanged(nameof(T3Dungs));
+            //NotifyPropertyChanged(nameof(T4Dungs));
+            //NotifyPropertyChanged(nameof(T5Dungs));
+            //NotifyPropertyChanged(nameof(Items));
+            //_dispatcher.Invoke(() => WindowManager.InfoWindow.AnimateICitems());
+        }
+
+        /* --------------------------------------------------------- */
+
+
+        /* -- PORTED ----------------------------------------------- */
+        public SynchronizedObservableCollection<EventGroup> EventGroups { get; }
+        public SynchronizedObservableCollection<TimeMarker> Markers { get; }
+        public SynchronizedObservableCollection<DailyEvent> SpecialEvents { get; }
+
+        public bool DiscardFirstVanguardPacket = true;
+
+        public SynchronizedObservableCollection<Character> Characters { get; set; }
+        public Character CurrentCharacter => Characters.ToSyncArray().FirstOrDefault(x => x.Id == SessionManager.CurrentPlayer.PlayerId);
+
+        public bool ShowElleonMarks => TimeManager.Instance.CurrentRegion == "EU";
+
+        public void EngageDungeon(uint dgId)
+        {
+            CurrentCharacter.EngageDungeon(dgId);
+        }
+        public void SaveToFile()
+        {
+            var root = new XElement("Characters", new XAttribute("elite", SessionManager.IsElite));
+
+            foreach (var c in Characters)
+            {
+                var ce = new XElement("Character",
+                    new XAttribute("name", c.Name),
+                    new XAttribute("id", c.Id),
+                    new XAttribute("class", c.Class),
+                    new XAttribute("pos", c.Position),
+                    new XAttribute("vanguardCredits", c.VanguardCredits),
+                    new XAttribute("guardianCredits", c.GuardianCredits),
+                    new XAttribute("vanguardWeekly", c.VanguardWeekliesDone),
+                    new XAttribute("vanguardDaily", c.VanguardDailiesDone),
+                    new XAttribute("guardianQuests", c.ClaimedGuardianQuests),
+                    new XAttribute("elleonMarks", c.ElleonMarks)
+                    );
+
+                var dungs = new XElement("Dungeons");
+
+                foreach (var d in c.Dungeons)
+                {
+                    var dg = new XElement("Dungeon",
+                        new XAttribute("id", d.Dungeon.Id),
+                        new XAttribute("entries", d.Entries),
+                        new XAttribute("total", d.Clears));
+                    dungs.Add(dg);
+                }
+
+                var gear = new XElement("GearPieces");
+
+                foreach (var gearItem in c.Gear)
+                {
+                    var g = new XElement("Gear",
+                        new XAttribute("id", gearItem.Id),
+                        new XAttribute("piece", gearItem.Piece),
+                        new XAttribute("tier", gearItem.Tier),
+                        new XAttribute("exp", gearItem.Experience),
+                        new XAttribute("enchant", gearItem.Enchant));
+                    gear.Add(g);
+                }
+                ce.Add(gear);
+                ce.Add(dungs);
+                root.Add(ce);
+            }
+
+            var doc = new XDocument(new XDeclaration("1.0", "utf-8", "yes"), root);
+            SaveCharDoc(doc);
+        }
+
+        private void SaveCharDoc(XDocument doc)
+        {
+            try
+            {
+                var fs = new FileStream(Path.Combine(App.BasePath, "resources/config/characters.xml"), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+                fs.SetLength(0);
+                using (var sr = new StreamWriter(fs, new UTF8Encoding(true)))
+                {
+                    sr.Write(doc.Declaration + Environment.NewLine + doc);
+                }
+                fs.Close();
+            }
+            catch (Exception)
+            {
+                var res = TccMessageBox.Show("TCC", "Could not write character data to characters.xml. File is being used by another process. Try again?", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                if (res == MessageBoxResult.Yes) SaveCharDoc(doc);
+            }
+        }
+
+        private void LoadCharDoc()
+        {
+            try
+            {
+                LoadCharacters();
+            }
+            catch (Exception)
+            {
+                var res = TccMessageBox.Show("TCC", $"There was an error while reading characters.xml. Manually correct the error and press Ok to try again, else press Cancel to delete current data.", MessageBoxButton.OKCancel);
+                if (res == MessageBoxResult.OK) LoadCharDoc();
+                else
+                {
+                    File.Delete("resources/config/characters.xml");
+                    LoadCharDoc();
+                }
+            }
+        }
+        private void LoadCharacters()
+        {
+            //TODO: make reader class and refactor this
+            if (!File.Exists("resources/config/characters.xml")) return;
+            var doc = XDocument.Load("resources/config/characters.xml");
+            // ReSharper disable AssignNullToNotNullAttribute
+            SessionManager.IsElite = bool.Parse(doc.Descendants().FirstOrDefault(x => x.Name == "Characters")?.Attribute("elite")?.Value);
+            foreach (var c in doc.Descendants().Where(x => x.Name == "Character"))
+            {
+                var ch = new Character();
+                c.Attributes().ToList().ForEach(attr =>
+                {
+                    if (attr.Name == "name") ch.Name = attr.Value;
+                    else if (attr.Name == "id") ch.Id = Convert.ToUInt32(attr.Value);
+                    else if (attr.Name == "pos") ch.Position = Convert.ToInt32(attr.Value);
+                    else if (attr.Name == "vanguardCredits") ch.VanguardCredits = Convert.ToInt32(attr.Value);
+                    else if (attr.Name == "guardianCredits") ch.GuardianCredits = Convert.ToInt32(attr.Value);
+                    else if (attr.Name == "vanguardWeekly") ch.VanguardWeekliesDone = Convert.ToInt32(attr.Value);
+                    else if (attr.Name == "vanguardDaily") ch.VanguardDailiesDone = Convert.ToInt32(attr.Value);
+                    else if (attr.Name == "guardianQuests") ch.ClaimedGuardianQuests = Convert.ToInt32(attr.Value);
+                    else if (attr.Name == "elleonMarks") ch.ElleonMarks = Convert.ToInt32(attr.Value);
+                    else if (attr.Name == "class") ch.Class = (Class)Enum.Parse(typeof(Class), attr.Value);
+                });
+
+                var dgDict = new Dictionary<uint, short>();
+                foreach (var dgEl in c.Descendants().Where(x => x.Name == "Dungeon"))
+                {
+                    uint dgId = 0;
+                    short dgEntries = 0;
+                    var dgTotal = 0;
+
+                    dgEl.Attributes().ToList().ForEach(attr =>
+                    {
+                        if (attr.Name == "id") dgId = Convert.ToUInt32(attr.Value);
+                        else if (attr.Name == "entries") dgEntries = Convert.ToInt16(attr.Value);
+                        else if (attr.Name == "total") dgTotal = Convert.ToInt16(attr.Value);
+                    });
+                    ch.SetDungeonClears(dgId, dgTotal);
+                    dgDict.Add(dgId, dgEntries);
+                }
+                ch.UpdateDungeons(dgDict);
+                var gear = new List<GearItem>();
+                foreach (var gearEl in c.Descendants().Where(x => x.Name == "Gear"))
+                {
+                    uint pieceId = 0;
+                    var pieceType = GearPiece.Weapon;
+                    var pieceTier = GearTier.Low;
+                    var pieceEnchant = 0;
+                    uint exp = 0;
+
+                    gearEl.Attributes().ToList().ForEach(attr =>
+                    {
+                        if (attr.Name == "id") pieceId = Convert.ToUInt32(attr.Value);
+                        if (attr.Name == "piece") pieceType = (GearPiece)Enum.Parse(typeof(GearPiece), attr.Value);
+                        if (attr.Name == "tier") pieceTier = (GearTier)Enum.Parse(typeof(GearTier), attr.Value);
+                        if (attr.Name == "enchant") pieceEnchant = Convert.ToInt32(attr.Value);
+                        if (attr.Name == "exp") exp = Convert.ToUInt32(attr.Value);
+                    });
+                    gear.Add(new GearItem(pieceId, pieceTier, pieceType, pieceEnchant, exp));
+                }
+                ch.UpdateGear(gear);
+                Characters.Add(ch);
+            }
+            // ReSharper restore AssignNullToNotNullAttribute
+        }
+        public void SetVanguard(S_AVAILABLE_EVENT_MATCHING_LIST x)
+        {
+            if (DiscardFirstVanguardPacket)
+            {
+                DiscardFirstVanguardPacket = false;
+                return;
+            }
+            var ch = Characters.ToSyncArray().FirstOrDefault(c => c.Id == SessionManager.CurrentPlayer.PlayerId);
+            if (ch != null)
+            {
+                ch.VanguardWeekliesDone = x.WeeklyDone;
+                ch.VanguardDailiesDone = x.DailyDone;
+                ch.VanguardCredits = x.VanguardCredits;
+                SaveToFile();
+            }
+
+        }
+        public void SetLoggedIn(uint id)
+        {
+            foreach (var ch in Characters)
+            {
+                if (ch.Id == id)
+                {
+                    ch.IsLoggedIn = true;
+                    DiscardFirstVanguardPacket = true;
+                    N(nameof(CurrentCharacter));
+                    SelectCharacter(CurrentCharacter);
+                }
+                else ch.IsLoggedIn = false;
+            }
+
+        }
+        public void SetDungeons(Dictionary<uint, short> dungeonCooldowns)
+        {
+            var ch = Characters.ToSyncArray().FirstOrDefault(x => x.Id == SessionManager.CurrentPlayer.PlayerId);
+            ch?.UpdateDungeons(dungeonCooldowns);
+        }
         public void LoadEvents(DayOfWeek today, string region)
         {
             ClearEvents();
@@ -52,7 +309,7 @@ namespace TCC.ViewModels
                 return;
             }
             LoadEventFile(today, region);
-            if(SessionManager.Logged) TimeManager.Instance.SetGuildBamTime(false);
+            if (SessionManager.Logged) TimeManager.Instance.SetGuildBamTime(false);
 
         }
         private void LoadEventFile(DayOfWeek today, string region)
@@ -208,244 +465,6 @@ namespace TCC.ViewModels
             EventGroups.Clear();
             SpecialEvents.Clear();
         }
-        public void SelectCharacter(Character c)
-        {
-            if (c == null) return;
-            _selectedCharacterId = c.Id;
-            foreach (var ch in Characters)
-            {
-                if (ch.Id == c.Id) ch.IsSelected = true;
-                else ch.IsSelected = false;
-            }
-            NPC(nameof(SelectedCharacter));
-
-            //AllDungeons = new CollectionViewSource { Source = SelectedCharacter.Dungeons }.View;
-            //SoloDungs = new CollectionViewSource { Source = SelectedCharacter.Dungeons }.View;
-            //T2Dungs = new CollectionViewSource { Source = SelectedCharacter.Dungeons }.View;
-            //T3Dungs = new CollectionViewSource { Source = SelectedCharacter.Dungeons }.View;
-            //T4Dungs = new CollectionViewSource { Source = SelectedCharacter.Dungeons }.View;
-            //T5Dungs = new CollectionViewSource { Source = SelectedCharacter.Dungeons }.View;
-            //Items = new CollectionViewSource { Source = SelectedCharacter.Gear }.View;
-
-            //AllDungeons.Filter = null;
-            //Items.Filter = null;
-            //SoloDungs.Filter = d => DungeonDatabase.Instance.Dungeons[((DungeonCooldown)d).Id].Tier == DungeonTier.Solo;
-            //T2Dungs.Filter = d => DungeonDatabase.Instance.  Dungeons[((DungeonCooldown)d).Id].Tier == DungeonTier.Tier2;
-            //T3Dungs.Filter = d => DungeonDatabase.Instance.  Dungeons[((DungeonCooldown)d).Id].Tier == DungeonTier.Tier3;
-            //T4Dungs.Filter = d => DungeonDatabase.Instance.  Dungeons[((DungeonCooldown)d).Id].Tier == DungeonTier.Tier4;
-            //T5Dungs.Filter = d => DungeonDatabase.Instance.  Dungeons[((DungeonCooldown)d).Id].Tier == DungeonTier.Tier5;
-
-            //AllDungeons.SortDescriptions.Add(new SortDescription("Tier", ListSortDirection.Ascending));
-            //Items.SortDescriptions.Add(new SortDescription("Piece", ListSortDirection.Ascending));
-
-            //NotifyPropertyChanged(nameof(AllDungeons));
-            //NotifyPropertyChanged(nameof(SoloDungs));
-            //NotifyPropertyChanged(nameof(T2Dungs));
-            //NotifyPropertyChanged(nameof(T3Dungs));
-            //NotifyPropertyChanged(nameof(T4Dungs));
-            //NotifyPropertyChanged(nameof(T5Dungs));
-            //NotifyPropertyChanged(nameof(Items));
-            //_dispatcher.Invoke(() => WindowManager.InfoWindow.AnimateICitems());
-        }
-        public void ShowWindow()
-        {
-            if (!Dispatcher.Thread.IsAlive) return;
-            //LoadEvents(DateTime.Now.DayOfWeek, TimeManager.Instance.CurrentRegion);
-            WindowManager.InfoWindow.ShowWindow();
-            NPC(nameof(SelectedCharacterExists));
-            //SelectCharacter(SelectedCharacter);
-        }
-
-        public void SetVanguard(S_AVAILABLE_EVENT_MATCHING_LIST x)
-        {
-            if (DiscardFirstVanguardPacket)
-            {
-                DiscardFirstVanguardPacket = false;
-                return;
-            }
-            var ch = Characters.ToSyncArray().FirstOrDefault(c => c.Id == SessionManager.CurrentPlayer.PlayerId);
-            if (ch != null)
-            {
-                ch.WeekliesDone = x.WeeklyDone;
-                ch.DailiesDone = x.DailyDone;
-                ch.Credits = x.VanguardCredits;
-                SaveToFile();
-            }
-
-        }
-        public void SetLoggedIn(uint id)
-        {
-            foreach (var ch in Characters)
-            {
-                if (ch.Id == id)
-                {
-                    ch.IsLoggedIn = true;
-                    DiscardFirstVanguardPacket = true;
-                    NPC(nameof(CurrentCharacter));
-                    SelectCharacter(CurrentCharacter);
-                }
-                else ch.IsLoggedIn = false;
-            }
-
-        }
-        public void SetDungeons(Dictionary<uint, short> dungeonCooldowns)
-        {
-            var ch = Characters.ToSyncArray().FirstOrDefault(x => x.Id == SessionManager.CurrentPlayer.PlayerId);
-            ch?.UpdateDungeons(dungeonCooldowns);
-        }
-        public void EngageDungeon(uint dgId)
-        {
-            CurrentCharacter.EngageDungeon(dgId);
-        }
-        public void SaveToFile()
-        {
-            var root = new XElement("Characters", new XAttribute("elite", SessionManager.IsElite));
-
-            foreach (var c in Characters)
-            {
-                var ce = new XElement("Character",
-                    new XAttribute("name", c.Name),
-                    new XAttribute("id", c.Id),
-                    new XAttribute("pos", c.Position),
-                    new XAttribute("credits", c.Credits),
-                    new XAttribute("weekly", c.WeekliesDone),
-                    new XAttribute("daily", c.DailiesDone),
-                    new XAttribute("class", c.Class),
-                    new XAttribute("guardianQuests", c.ClaimedGuardianQuests),
-                    new XAttribute("elleonMarks", c.ElleonMarks)
-                    );
-
-                var dungs = new XElement("Dungeons");
-
-                foreach (var d in c.Dungeons)
-                {
-                    var dg = new XElement("Dungeon",
-                        new XAttribute("id", d.Id),
-                        new XAttribute("entries", d.Entries),
-                        new XAttribute("total", d.Clears));
-                    dungs.Add(dg);
-                }
-
-                var gear = new XElement("GearPieces");
-
-                foreach (var gearItem in c.Gear)
-                {
-                    var g = new XElement("Gear",
-                        new XAttribute("id", gearItem.Id),
-                        new XAttribute("piece", gearItem.Piece),
-                        new XAttribute("tier", gearItem.Tier),
-                        new XAttribute("exp", gearItem.Experience),
-                        new XAttribute("enchant", gearItem.Enchant));
-                    gear.Add(g);
-                }
-                ce.Add(gear);
-                ce.Add(dungs);
-                root.Add(ce);
-            }
-
-            var doc = new XDocument(new XDeclaration("1.0", "utf-8", "yes"), root);
-            SaveCharDoc(doc);
-        }
-
-        private void SaveCharDoc(XDocument doc)
-        {
-            try
-            {
-                var fs = new FileStream(Path.GetDirectoryName(typeof(App).Assembly.Location)+ "/resources/config/characters.xml", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
-                fs.SetLength(0);
-                using (var sr = new StreamWriter(fs, new UTF8Encoding(true)))
-                {
-                    sr.Write(doc.Declaration + Environment.NewLine + doc);
-                }
-                fs.Close();
-            }
-            catch (Exception)
-            {
-                var res = TccMessageBox.Show("TCC", "Could not write character data to characters.xml. File is being used by another process. Try again?", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-                if (res == MessageBoxResult.Yes) SaveCharDoc(doc);
-            }
-        }
-
-        private void LoadCharDoc()
-        {
-            try
-            {
-                LoadCharacters();
-            }
-            catch (Exception)
-            {
-                var res = TccMessageBox.Show("TCC", $"There was an error while reading characters.xml. Manually correct the error and press Ok to try again, else press Cancel to delete current data.", MessageBoxButton.OKCancel);
-                if (res == MessageBoxResult.OK) LoadCharDoc();
-                else
-                {
-                    File.Delete("resources/config/characters.xml");
-                    LoadCharDoc();
-                }
-            }
-        }
-        private void LoadCharacters()
-        {
-            if (!File.Exists("resources/config/characters.xml")) return;
-            var doc = XDocument.Load("resources/config/characters.xml");
-            // ReSharper disable AssignNullToNotNullAttribute
-            SessionManager.IsElite = bool.Parse(doc.Descendants().FirstOrDefault(x => x.Name == "Characters")?.Attribute("elite")?.Value);
-            foreach (var c in doc.Descendants().Where(x => x.Name == "Character"))
-            {
-                var name = c.Attribute("name")?.Value;
-                var cr = Convert.ToInt32(c.Attribute("credits")?.Value);
-                var w = Convert.ToInt32(c.Attribute("weekly")?.Value);
-                var d = Convert.ToInt32(c.Attribute("daily")?.Value);
-                var id = Convert.ToUInt32(c.Attribute("id")?.Value);
-                var pos = Convert.ToInt32(c.Attribute("pos")?.Value);
-                var guard = c.Attribute("guardianQuests") != null ? Convert.ToInt32(c.Attribute("guardianQuests")?.Value) : 0;
-                var marks = c.Attribute("elleonMarks") != null ? Convert.ToUInt32(c.Attribute("elleonMarks")?.Value) : 0;
-                var classString = c.Attribute("class")?.Value;
-                if (!Enum.TryParse<Class>(classString, out var cl))
-                {
-                    //keep retrocompatibility
-                    if (classString == "Elementalist") classString = "Mystic";
-                    else if (classString == "Fighter") classString = "Brawler";
-                    else if (classString == "Engineer") classString = "Gunner";
-                    else if (classString == "Soulless") classString = "Reaper";
-                    else if (classString == "Glaiver") classString = "Valkyrie";
-                    else if (classString == "Assassin") classString = "Ninja";
-                }
-                cl = (Class)Enum.Parse(typeof(Class), classString);
-
-                var ch = new Character(name, cl, id, pos, Dispatcher)
-                {
-                    Credits = cr,
-                    WeekliesDone = w,
-                    DailiesDone = d,
-                    ClaimedGuardianQuests = guard,
-                    ElleonMarks = marks
-                };
-                var dgDict = new Dictionary<uint, short>();
-                foreach (var dgEl in c.Descendants().Where(x => x.Name == "Dungeon"))
-                {
-                    var dgId = Convert.ToUInt32(dgEl.Attribute("id")?.Value);
-                    var dgEntries = Convert.ToInt16(dgEl.Attribute("entries")?.Value);
-                    var dgTotal = dgEl.Attribute("total") != null ? Convert.ToInt16(dgEl.Attribute("total")?.Value) : 0;
-                    ch.SetDungeonTotalRuns(dgId, dgTotal);
-                    dgDict.Add(dgId, dgEntries);
-                }
-                ch.UpdateDungeons(dgDict);
-                var gear = new List<GearItem>();
-                foreach (var gearEl in c.Descendants().Where(x => x.Name == "Gear"))
-                {
-                    var pieceId = Convert.ToUInt32(gearEl.Attribute("id")?.Value);
-                    var pieceType = (GearPiece)Enum.Parse(typeof(GearPiece), gearEl.Attribute("piece")?.Value);
-                    var pieceTier = (GearTier)Enum.Parse(typeof(GearTier), gearEl.Attribute("tier")?.Value);
-                    var pieceEnchant = Convert.ToInt32(gearEl.Attribute("enchant")?.Value);
-                    var exp = Convert.ToUInt32(gearEl.Attribute("exp")?.Value);
-                    gear.Add(new GearItem(pieceId, pieceTier, pieceType, pieceEnchant, exp));
-                }
-                ch.UpdateGear(gear);
-                Characters.Add(ch);
-            }
-            // ReSharper restore AssignNullToNotNullAttribute
-        }
-
         public void AddEventGroup(EventGroup eg)
         {
             var g = EventGroups.ToSyncArray().FirstOrDefault(x => x.Name == eg.Name);
@@ -461,5 +480,279 @@ namespace TCC.ViewModels
                 EventGroups.Add(eg);
             }
         }
+
+
+        /* -------------------------------------------------------- */
     }
 }
+
+namespace TCC.Data
+{
+    public class CharactersXmlParser
+    {
+        private const string CharactersTag = "Characters";
+        private const string CharacterTag = "Character";
+        private const string NameTag = "name";
+        private const string IdTag = "id";
+        private const string PosTag = "pos";
+        private const string VanguardCreditsTag = "vanguardCredits";
+        private const string GuardianCreditsTag = "guardianCredits";
+        private const string VanguardWeeklyTag = "vanguardWeekly";
+        private const string VanguardDailyTag = "vanguardDaily";
+        private const string GuardianQuestsTag = "guardianQuests";
+        private const string ElleonMarksTag = "elleonMarks";
+        private const string DragonwingScalesTag = "dragonwing";
+        private const string PiecesOfDragonScrollTag = "scrollPieces";
+        private const string ClassTag = "class";
+        private const string LevelTag = "level";
+        private const string ItemLevelTag = "ilvl";
+        private const string DungeonTag = "Dungeon";
+        private const string DungeonsTag = "Dungeons";
+        private const string EntriesTag = "entries";
+        private const string TotalTag = "total";
+        private const string GearTag = "Gear";
+        private const string GearPiecesTag = "GearPieces";
+        private const string PieceTag = "piece";
+        private const string TierTag = "tier";
+        private const string EnchantTag = "enchant";
+        private const string ExpTag = "exp";
+        private const string EliteTag = "elite";
+        private const string LastOnlineTag = "lastOnline";
+        private const string LastLocationTag = "lastLocation";
+        private const string GuildNameTag = "guildName";
+        private const string BuffTag = "Buff";
+        private const string BuffsTag = "Buffs";
+        private const string StacksTag = "stacks";
+        private const string DurationTag = "duration";
+        private const string InventoryTag = "Inventory";
+        private const string ItemTag = "Item";
+        private const string AmountTag = "amount";
+        private const string ServerTag = "server";
+        private const string SlotTag = "slot";
+
+
+        private readonly string _path = Path.Combine(App.BasePath, "resources/config/characters.xml");
+        private XDocument _doc;
+
+        public static XDocument BuildCharacterFile(SynchronizedObservableCollection<Character> list)
+        {
+            var root = new XElement(CharactersTag, new XAttribute(EliteTag, SessionManager.IsElite));
+            list.ToSyncArray().ToList().ForEach(c =>
+            {
+                var xChar = BuildGeneralDataXelement(c);
+                xChar.Add(BuildDungeonDataXelement(c));
+                xChar.Add(BuildGearDataXelement(c));
+                xChar.Add(BuildBuffsXelement(c));
+                xChar.Add(BuildInventoryDataXelement(c));
+                root.Add(xChar);
+            });
+
+            return new XDocument(new XDeclaration("1.0", "utf-8", "yes"), root);
+        }
+
+        private static XElement BuildBuffsXelement(Character character)
+        {
+            var xRet = new XElement(BuffsTag);
+            character.Buffs.ToList().ForEach(b =>
+            {
+                xRet.Add(new XElement(BuffTag,
+                            new XAttribute(IdTag, b.Id),
+                            new XAttribute(DurationTag, b.Duration),
+                            new XAttribute(StacksTag, b.Stacks)
+                    ));
+            });
+            return xRet;
+        }
+        private static XElement BuildGearDataXelement(Character c)
+        {
+            var xGear = new XElement(GearPiecesTag);
+            c.Gear.ToSyncArray().ToList().ForEach(item =>
+            {
+                xGear.Add(new XElement(GearTag,
+                    new XAttribute(IdTag, item.Id),
+                    new XAttribute(PieceTag, item.Piece),
+                    new XAttribute(TierTag, item.Tier),
+                    new XAttribute(ExpTag, item.Experience),
+                    new XAttribute(EnchantTag, item.Enchant)));
+            });
+            return xGear;
+        }
+        private static XElement BuildGeneralDataXelement(Character c)
+        {
+            return new XElement(CharacterTag,
+                new XAttribute(NameTag, c.Name),
+                new XAttribute(IdTag, c.Id),
+                new XAttribute(ClassTag, c.Class),
+                new XAttribute(PosTag, c.Position),
+                new XAttribute(LastOnlineTag, c.LastOnline),
+                new XAttribute(LastLocationTag, c.LastLocation == null ? "0_0_0": $"{c.LastLocation.World}_{c.LastLocation.Guard}_{c.LastLocation.Section}"),
+                new XAttribute(VanguardCreditsTag, c.VanguardCredits),
+                new XAttribute(GuildNameTag, c.GuildName),
+                new XAttribute(ServerTag, c.ServerName),
+                new XAttribute(GuardianCreditsTag, c.GuardianCredits),
+                new XAttribute(VanguardWeeklyTag, c.VanguardWeekliesDone),
+                new XAttribute(VanguardDailyTag, c.VanguardDailiesDone),
+                new XAttribute(GuardianQuestsTag, c.ClaimedGuardianQuests),
+                new XAttribute(ElleonMarksTag, c.ElleonMarks),
+                new XAttribute(DragonwingScalesTag, c.DragonwingScales),
+                new XAttribute(LevelTag, c.Level),
+                new XAttribute(ItemLevelTag, c.ItemLevel),
+                new XAttribute(PiecesOfDragonScrollTag, c.PiecesOfDragonScroll)
+            );
+        }
+        private static XElement BuildDungeonDataXelement(Character c)
+        {
+            var xDungeons = new XElement(DungeonsTag);
+            c.Dungeons.ToSyncArray().ToList().ForEach(dungCd =>
+            {
+                xDungeons.Add(new XElement(DungeonTag,
+                    new XAttribute(IdTag, dungCd.Dungeon.Id),
+                    new XAttribute(EntriesTag, dungCd.Entries),
+                    new XAttribute(TotalTag, dungCd.Clears)));
+            });
+
+            return xDungeons;
+        }
+        private static XElement BuildInventoryDataXelement(Character c)
+        {
+            var xRet = new XElement(InventoryTag);
+            c.Inventory.ToList().ForEach(item =>
+            {
+                xRet.Add(new XElement(ItemTag,
+                            new XAttribute(SlotTag, item.Slot),
+                            new XAttribute(IdTag, item.Item.Id),
+                            new XAttribute(AmountTag, item.Amount)));
+            });
+
+            return xRet;
+        }
+        private static void ParseGeneralCharInfo(XElement xChar, Character ch)
+        {
+            xChar.Attributes().ToList().ForEach(attr =>
+            {
+                if (attr.Name == NameTag) ch.Name = attr.Value;
+                else if (attr.Name == IdTag) ch.Id = Convert.ToUInt32(attr.Value);
+                else if (attr.Name == PosTag) ch.Position = Convert.ToInt32(attr.Value);
+                else if (attr.Name == VanguardCreditsTag) ch.VanguardCredits = Convert.ToInt32(attr.Value);
+                else if (attr.Name == GuardianCreditsTag) ch.GuardianCredits = Convert.ToInt32(attr.Value);
+                else if (attr.Name == VanguardWeeklyTag) ch.VanguardWeekliesDone = Convert.ToInt32(attr.Value);
+                else if (attr.Name == VanguardDailyTag) ch.VanguardDailiesDone = Convert.ToInt32(attr.Value);
+                else if (attr.Name == GuardianQuestsTag) ch.ClaimedGuardianQuests = Convert.ToInt32(attr.Value);
+                else if (attr.Name == ElleonMarksTag) ch.ElleonMarks = Convert.ToInt32(attr.Value);
+                else if (attr.Name == DragonwingScalesTag) ch.DragonwingScales = Convert.ToInt32(attr.Value);
+                else if (attr.Name == PiecesOfDragonScrollTag) ch.PiecesOfDragonScroll = Convert.ToInt32(attr.Value);
+                else if (attr.Name == ClassTag) ch.Class = (Class)Enum.Parse(typeof(Class), attr.Value);
+                else if (attr.Name == LevelTag) ch.Level = Convert.ToInt32(attr.Value);
+                else if (attr.Name == ItemLevelTag) ch.ItemLevel = Convert.ToInt32(attr.Value);
+                else if (attr.Name == LastOnlineTag) ch.LastOnline = Convert.ToInt64(attr.Value);
+                else if (attr.Name == LastLocationTag) ch.LastLocation = new Location(attr.Value);
+                else if (attr.Name == GuildNameTag) ch.GuildName = attr.Value;
+                else if (attr.Name == ServerTag) ch.ServerName = attr.Value;
+            });
+        }
+        private static void ParseDungeonCharInfo(XElement xChar, Character ch)
+        {
+            var dungeons = new Dictionary<uint, short>();
+            xChar.Descendants().Where(x => x.Name == DungeonTag).ToList().ForEach(xDung =>
+            {
+                uint id = 0;
+                short entries = 0;
+                var total = 0;
+
+                xDung.Attributes().ToList().ForEach(attr =>
+                {
+                    if (attr.Name == IdTag) id = Convert.ToUInt32(attr.Value);
+                    else if (attr.Name == EntriesTag) entries = Convert.ToInt16(attr.Value);
+                    else if (attr.Name == TotalTag) total = Convert.ToInt16(attr.Value);
+                });
+                ch.SetDungeonClears(id, total);
+                dungeons.Add(id, entries);
+            });
+
+            ch.UpdateDungeons(dungeons);
+        }
+        private static void ParseGearCharInfo(XElement xChar, Character ch)
+        {
+            var gear = new List<GearItem>();
+            xChar.Descendants().Where(x => x.Name == GearTag).ToList().ForEach(xPiece =>
+            {
+                uint id = 0;
+                var type = GearPiece.Weapon;
+                var tier = GearTier.Low;
+                var enchant = 0;
+                uint exp = 0;
+
+                xPiece.Attributes().ToList().ForEach(attr =>
+                {
+                    if (attr.Name == IdTag) id = Convert.ToUInt32(attr.Value);
+                    if (attr.Name == PieceTag) type = (GearPiece)Enum.Parse(typeof(GearPiece), attr.Value);
+                    if (attr.Name == TierTag) tier = (GearTier)Enum.Parse(typeof(GearTier), attr.Value);
+                    if (attr.Name == EnchantTag) enchant = Convert.ToInt32(attr.Value);
+                    if (attr.Name == ExpTag) exp = Convert.ToUInt32(attr.Value);
+                });
+                gear.Add(new GearItem(id, tier, type, enchant, exp));
+            });
+            ch.UpdateGear(gear);
+        }
+        private static void ParseBuffsInfo(XElement xChar, Character ch)
+        {
+            xChar.Descendants().Where(x => x.Name == BuffTag).ToList().ForEach(xBuff =>
+            {
+                var id = 0U;
+                ulong duration = 0;
+                var stacks = 0;
+
+                xBuff.Attributes().ToList().ForEach(a =>
+                {
+                    if (a.Name == IdTag) id = uint.Parse(a.Value);
+                    if (a.Name == DurationTag) duration = ulong.Parse(a.Value);
+                    if (a.Name == StacksTag) stacks = int.Parse(a.Value);
+                });
+                ch.Buffs.Add(new AbnormalityData { Id = id, Duration = duration, Stacks = stacks });
+            });
+
+        }
+
+        private static void ParseInventoryInfo(XElement xChar, Character ch)
+        {
+            xChar.Descendants().Where(x => x.Name == ItemTag).ToList().ForEach(xItem =>
+            {
+                var slot = 0U;
+                var id = 0U;
+                var amount = 0;
+
+                xItem.Attributes().ToList().ForEach(a =>
+                {
+                    if (a.Name == SlotTag) slot = uint.Parse(a.Value);
+                    if (a.Name == IdTag) id = uint.Parse(a.Value);
+                    if (a.Name == AmountTag) amount = int.Parse(a.Value);
+                });
+                ch.Inventory.Add(new InventoryItem(slot,id,amount));
+            });
+        }
+        public void Read(SynchronizedObservableCollection<Character> dest)
+        {
+            if (File.Exists(_path)) _doc = XDocument.Load(_path);
+            if (_doc == null) return;
+
+            ParseEliteStatus();
+
+            _doc.Descendants().Where(x => x.Name == CharacterTag).ToList().ForEach(xChar =>
+            {
+                var ch = new Character();
+                ParseGeneralCharInfo(xChar, ch);
+                ParseDungeonCharInfo(xChar, ch);
+                ParseGearCharInfo(xChar, ch);
+                ParseBuffsInfo(xChar, ch);
+                ParseInventoryInfo(xChar, ch);
+                dest.Add(ch);
+            });
+        }
+
+        private void ParseEliteStatus()
+        {
+            SessionManager.IsElite = bool.Parse(_doc.Descendants().FirstOrDefault(x => x.Name == CharactersTag)?.Attribute(EliteTag)?.Value);
+        }
+    }
+}
+

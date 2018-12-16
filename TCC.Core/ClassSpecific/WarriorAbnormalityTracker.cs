@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using TCC.Data;
+using TCC.Data.Skills;
 using TCC.Parsing.Messages;
 using TCC.ViewModels;
 
@@ -12,6 +13,7 @@ namespace TCC.ClassSpecific
         private static readonly uint[] DstanceIDs = { 100200, 100201, 100202, 100203 };
         private static readonly uint[] TraverseCutIDs = { 101300/*, 101301*/ };
         private static readonly uint[] BladeWaltzIDs = { 104100 };
+        private static readonly uint[] SwiftGlyphs = { 21010, 21070 };
 
         private Skill _bladeWaltz;
 
@@ -22,6 +24,7 @@ namespace TCC.ClassSpecific
             CheckDefensiveStance(p);
             CheckDeadlyGamble(p);
             CheckTraverseCut(p);
+            CheckSwiftGlyphs(p);
             CheckBladeWaltz(p);
         }
         public override void CheckAbnormality(S_ABNORMALITY_REFRESH p)
@@ -31,12 +34,14 @@ namespace TCC.ClassSpecific
             CheckDefensiveStance(p);
             CheckDeadlyGamble(p);
             CheckTraverseCut(p);
+            CheckSwiftGlyphs(p);
             //CheckTempestAura(p);
         }
         public override void CheckAbnormality(S_ABNORMALITY_END p)
         {
             if (!p.TargetId.IsMe()) return;
             CheckTraverseCut(p);
+            CheckSwiftGlyphs(p);
             CheckDefensiveStance(p);
             CheckAssaultStance(p);
             CheckDeadlyGamble(p);
@@ -83,12 +88,12 @@ namespace TCC.ClassSpecific
         private static void CheckDeadlyGamble(S_ABNORMALITY_REFRESH p)
         {
             if (!GambleIDs.Contains(p.AbnormalityId)) return;
-            ((WarriorBarManager)ClassWindowViewModel.Instance.CurrentManager).DeadlyGamble.Buff.Refresh(p.Duration);
+            ((WarriorBarManager)ClassWindowViewModel.Instance.CurrentManager).DeadlyGamble.Buff.Refresh(p.Duration, CooldownMode.Normal);
         }
         private static void CheckDeadlyGamble(S_ABNORMALITY_END p)
         {
             if (!GambleIDs.Contains(p.AbnormalityId)) return;
-            ((WarriorBarManager)ClassWindowViewModel.Instance.CurrentManager).DeadlyGamble.Buff.Refresh(0);
+            ((WarriorBarManager)ClassWindowViewModel.Instance.CurrentManager).DeadlyGamble.Buff.Refresh(0, CooldownMode.Normal);
         }
 
         private void CheckBladeWaltz(S_ABNORMALITY_BEGIN p)
@@ -118,6 +123,25 @@ namespace TCC.ClassSpecific
         {
             if (!TraverseCutIDs.Contains(p.AbnormalityId)) return;
             ((WarriorBarManager)ClassWindowViewModel.Instance.CurrentManager).TraverseCut.Val = 0;
+        }
+
+        private static void CheckSwiftGlyphs(S_ABNORMALITY_BEGIN p)
+        {
+            if (!SwiftGlyphs.Contains(p.AbnormalityId)) return;
+            ((WarriorBarManager)ClassWindowViewModel.Instance.CurrentManager).Swift.Start(p.Duration);
+            ((WarriorBarManager)ClassWindowViewModel.Instance.CurrentManager).SwiftProc = true;
+        }
+        private static void CheckSwiftGlyphs(S_ABNORMALITY_REFRESH p)
+        {
+            if (!SwiftGlyphs.Contains(p.AbnormalityId)) return;
+            ((WarriorBarManager)ClassWindowViewModel.Instance.CurrentManager).Swift.Start(p.Duration);
+            ((WarriorBarManager)ClassWindowViewModel.Instance.CurrentManager).SwiftProc = true;
+        }
+        private static void CheckSwiftGlyphs(S_ABNORMALITY_END p)
+        {
+            if (!SwiftGlyphs.Contains(p.AbnormalityId)) return;
+            ((WarriorBarManager)ClassWindowViewModel.Instance.CurrentManager).Swift.Refresh(0, CooldownMode.Normal);
+            ((WarriorBarManager)ClassWindowViewModel.Instance.CurrentManager).SwiftProc = false;
         }
     }
 }

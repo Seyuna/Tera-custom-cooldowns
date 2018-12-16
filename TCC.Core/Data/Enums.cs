@@ -1,8 +1,36 @@
-﻿using System;
+﻿using System.ComponentModel;
 
-namespace TCC.Parsing
+namespace TCC.Data
 {
-    [Flags]
+    public enum ItemLevelTier
+    {
+        [Description("None")]
+        Tier0 = 0,
+        [Description("412")]
+        Tier1 = 412,
+        [Description("431")]
+        Tier2 = 431,
+        [Description("439")]
+        Tier3 = 439,
+        [Description("446")]
+        Tier4 = 446,
+        [Description("453")]
+        Tier5 = 453,
+        [Description("455")]
+        Tier6 = 455,
+        [Description("456")]
+        Tier7 = 456
+    }
+
+    public enum NpcGuild
+    {
+        Vanguard = 609,
+        Guardian = 611
+    }
+    public enum WarriorStance
+    {
+        None, Assault, Defensive
+    }
     public enum ModifierKeys : uint
     {
         Alt = 1,
@@ -26,10 +54,13 @@ namespace TCC.Parsing
         THA = 10,
         SE = 11
     }
-}
-namespace TCC.Data
-{
-    public enum AbnormalityShape
+
+    public enum CooldownMode
+    {
+        Normal,
+        Pre
+    }
+    public enum ControlShape
     {
         Round = 0,
         Square = 1
@@ -43,8 +74,9 @@ namespace TCC.Data
     }
     public enum WarriorEdgeMode
     {
-        Bar,
-        Arrow
+        Rhomb,
+        Arrow,
+        Bar
     }
 
     public enum HpChangeSource
@@ -63,7 +95,7 @@ namespace TCC.Data
     }
     public enum DungeonTier
     {
-        Solo,
+        Solo = 1,
         Tier2,
         Tier3,
         Tier4,
@@ -122,20 +154,20 @@ namespace TCC.Data
         SentWhisper = 300,
         ReceivedWhisper = 301,
         System = 302, //missing in db
-        TradeRedirect = 303, 
+        TradeRedirect = 303,
         //Enchant12 = 304,
         //Enchant15 = 305,
         RaidLeader = 306,
-        Bargain = 307, 
-        Apply = 308, 
-        Death = 309,     
-        Ress = 310,      
-        Quest = 311,     
-        Friend = 312,    
+        Bargain = 307,
+        Apply = 308,
+        Death = 309,
+        Ress = 310,
+        Quest = 311,
+        Friend = 312,
         //Enchant7 = 313,  
         //Enchant8 = 314,  
         //Enchant9 = 315,  
-        WorldBoss = 316, 
+        WorldBoss = 316,
         Laurel = 317,
         Damage = 318,
         Guardian = 319,
@@ -268,7 +300,8 @@ namespace TCC.Data
         Low = 0,
         Mid = 1,
         High = 2,
-        Top = 3
+        Top = 3,
+        Heroic
     }
 
     public enum ClickThruMode

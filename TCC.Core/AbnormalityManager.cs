@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using TCC.ClassSpecific;
 using TCC.Data;
+using TCC.Data.Abnormalities;
 using TCC.Data.Databases;
 using TCC.ViewModels;
 
@@ -55,31 +56,26 @@ namespace TCC
                     break;
             }
         }
-        public static bool BeginAbnormality(uint id, ulong target, uint duration, int stacks)
+        public static void BeginAbnormality(uint id, ulong target, ulong source, uint duration, int stacks)
         {
-            if (!SessionManager.AbnormalityDatabase.Abnormalities.TryGetValue(id, out var ab)) return false;
-            if (!Filter(ab)) return false;
+            if (!SessionManager.AbnormalityDatabase.Abnormalities.TryGetValue(id, out var ab)) return;
+            if (!Filter(ab)) return;
             if (duration == int.MaxValue) ab.Infinity = true;
             if (target.IsMe())
             {
                 BeginPlayerAbnormality(ab, stacks, duration);
-                if (!Settings.DisablePartyAbnormals)
+                if (!Settings.SettingsHolder.DisablePartyAbnormals)
                 {
-                    GroupWindowViewModel.Instance.BeginOrRefreshAbnormality(
-                        ab,
-                        stacks,
-                        duration,
-                        SessionManager.CurrentPlayer.PlayerId,
-                        SessionManager.CurrentPlayer.ServerId
-                    );
+                    GroupWindowViewModel.Instance.BeginOrRefreshAbnormality(ab, stacks, duration, SessionManager.CurrentPlayer.PlayerId, SessionManager.CurrentPlayer.ServerId);
                 }
             }
             else
             {
                 BeginNpcAbnormality(ab, stacks, duration, target);
             }
+            if (source.IsMe() || target.IsMe()) CheckPassivity(ab, duration);
 
-            return true;
+            return;
         }
         public static bool EndAbnormality(ulong target, uint id)
         {
@@ -92,7 +88,6 @@ namespace TCC
 
         private static void BeginPlayerAbnormality(Abnormality ab, int stacks, uint duration)
         {
-            Log.CW($"[BeginPlayerAbnormality] {ab.Name} ({ab.Id})");
             if (ab.Type == AbnormalityType.Buff)
             {
                 if (ab.Infinity)
@@ -110,20 +105,20 @@ namespace TCC
                 SessionManager.CurrentPlayer.AddOrRefreshDebuff(ab, duration, stacks);
                 SessionManager.CurrentPlayer.AddToDebuffList(ab);
             }
-            CheckPassivity(ab, duration);
         }
 
         private static void CheckPassivity(Abnormality ab, uint duration)
         {
-            if (PassivityDatabase.Passivities.Contains(ab.Id))
+            if (Settings.SettingsHolder.EthicalMode) return;
+            if (PassivityDatabase.Passivities.ContainsKey(ab.Id))
             {
-                SkillManager.AddPassivitySkill(ab.Id, 60);
+                SkillManager.AddPassivitySkill(ab.Id, PassivityDatabase.Passivities[ab.Id]);
             }
             else if (CooldownWindowViewModel.Instance.MainSkills.Any(m => m.CooldownType == CooldownType.Passive && ab.Id == m.Skill.Id) ||
                 CooldownWindowViewModel.Instance.SecondarySkills.Any(m => m.CooldownType == CooldownType.Passive && ab.Id == m.Skill.Id))
 
             {
-                //TODO: can't do this correctly since we don't know passivity cooldown from database so we just add duration
+                //note: can't do this correctly since we don't know passivity cooldown from database so we just add duration
                 SkillManager.AddPassivitySkill(ab.Id, duration / 1000);
             }
         }
@@ -140,6 +135,7 @@ namespace TCC
                 }
                 else
                 {
+
                     SessionManager.CurrentPlayer.RemoveBuff(ab);
                     if (ab.IsShield)
                     {
@@ -157,7 +153,7 @@ namespace TCC
 
         private static void BeginNpcAbnormality(Abnormality ab, int stacks, uint duration, ulong target)
         {
-            //if (EntitiesViewModel.TryGetBossById(target, out Npc b))
+            //if (EntitiesViewModel.TryGetBossById(target, out NPC b))
             //{
             //    b.AddorRefresh(ab, duration, stacks, BOSS_AB_SIZE, BOSS_AB_LEFT_MARGIN);
             //}
@@ -167,11 +163,11 @@ namespace TCC
         private static bool Filter(Abnormality ab)
         {
             return ab.IsShow &&
-                   !ab.Name.Contains("BTS") && 
-                   !ab.ToolTip.Contains("BTS") && 
+                   !ab.Name.Contains("BTS") &&
+                   !ab.ToolTip.Contains("BTS") &&
                    (
-                   !ab.Name.Contains("(Hidden)") && 
-                   !ab.Name.Equals("Unknown") && 
+                   !ab.Name.Contains("(Hidden)") &&
+                   !ab.Name.Equals("Unknown") &&
                    !ab.Name.Equals(string.Empty)
                    );
         }

@@ -8,6 +8,7 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using TCC.Data;
+using TCC.Settings;
 using TCC.ViewModels;
 
 namespace TCC.Windows
@@ -38,7 +39,7 @@ namespace TCC.Windows
 
         public void ShowWindow()
         {
-            if (Settings.ForceSoftwareRendering) RenderOptions.ProcessRenderMode = RenderMode.Default;
+            if (SettingsHolder.ForceSoftwareRendering) RenderOptions.ProcessRenderMode = RenderMode.Default;
             Dispatcher.Invoke(() =>
             {
                 var animation = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(200));
@@ -65,20 +66,20 @@ namespace TCC.Windows
 
         private void Close(object sender, RoutedEventArgs e)
         {
+            SettingsWriter.Save();
             var an = new DoubleAnimation(0, TimeSpan.FromMilliseconds(200));
             an.Completed += (s, ev) =>
             {
-                Hide();
-                if (Settings.ForceSoftwareRendering) RenderOptions.ProcessRenderMode = RenderMode.SoftwareOnly;
+                Close();
+                if (SettingsHolder.ForceSoftwareRendering) RenderOptions.ProcessRenderMode = RenderMode.SoftwareOnly;
 
             };
             BeginAnimation(OpacityProperty, an);
-            SettingsWriter.Save();
         }
 
         private void FilterByClass(object sender, RoutedEventArgs e)
         {
-            var c = (Class)((FrameworkElement) sender).DataContext;
+            var c = (Class)((FrameworkElement)sender).DataContext;
             var view = DC.AbnormalitiesView;
             if (SearchBox.Text.Length > 0)
             {
@@ -107,10 +108,7 @@ namespace TCC.Windows
             }
         }
     }
-}
 
-namespace TCC.ViewModels
-{
     public class ClassToggle : TSPropertyChanged
     {
         private bool _selected;
@@ -122,7 +120,7 @@ namespace TCC.ViewModels
             {
                 if (_selected == value) return;
                 _selected = value;
-                NPC();
+                N();
 
             }
         }
@@ -149,12 +147,12 @@ namespace TCC.ViewModels
         public void Execute(object parameter)
         {
             _toggle.Selected = !_toggle.Selected;
-            if (_toggle.Selected) Settings.GroupAbnormals[_toggle.Class].Add(_toggle.AbnormalityId);
-            else Settings.GroupAbnormals[_toggle.Class].Remove(_toggle.AbnormalityId);
+            if (_toggle.Selected) SettingsHolder.GroupAbnormals[_toggle.Class].Add(_toggle.AbnormalityId);
+            else SettingsHolder.GroupAbnormals[_toggle.Class].Remove(_toggle.AbnormalityId);
         }
-
+#pragma warning disable 0067
         public event EventHandler CanExecuteChanged;
-
+#pragma warning restore 0067
         public ToggleCommand(ClassToggle t)
         {
             _toggle = t;

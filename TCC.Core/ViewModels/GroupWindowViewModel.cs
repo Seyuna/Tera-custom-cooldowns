@@ -8,6 +8,8 @@ using System.Windows.Media;
 using System.Windows.Threading;
 using TCC.Annotations;
 using TCC.Data;
+using TCC.Data.Abnormalities;
+using TCC.Data.Pc;
 using TCC.Parsing;
 using TCC.Parsing.Messages;
 
@@ -24,7 +26,6 @@ namespace TCC.ViewModels
         public event Action SettingsUpdated;
 
         public static GroupWindowViewModel Instance => _instance ?? (_instance = new GroupWindowViewModel());
-        //public bool IsTeraOnTop => WindowManager.IsTccVisible; //TODO: is this needed? need to check for all VM
         public SynchronizedObservableCollection<User> Members { get; }
         public ICollectionViewLiveShaping Dps { [UsedImplicitly] get; }
         public ICollectionViewLiveShaping Tanks { [UsedImplicitly] get; }
@@ -36,16 +37,16 @@ namespace TCC.ViewModels
             {
                 if (_raid == value) return;
                 _raid = value;
-                NPC();
+                N();
             }
         }
         public int Size => Members.Count;
         public int ReadyCount => Members.Count(x => x.Ready == ReadyStatus.Ready);
         public int AliveCount => Members.Count(x => x.Alive);
         public bool Formed => Size > 0;
-        public bool ShowDetails => Formed && Settings.ShowGroupWindowDetails;
-        public bool ShowLeaveButton => Formed && Proxy.IsConnected;
-        public bool ShowLeaderButtons => Formed && Proxy.IsConnected && AmILeader;
+        public bool ShowDetails => Formed && Settings.SettingsHolder.ShowGroupWindowDetails;
+        public bool ShowLeaveButton => Formed && Proxy.Proxy.IsConnected;
+        public bool ShowLeaderButtons => Formed && Proxy.Proxy.IsConnected && AmILeader;
         public bool Rolling { get; set; }
 
         public GroupWindowViewModel()
@@ -65,20 +66,20 @@ namespace TCC.ViewModels
             //Task.Delay(0).ContinueWith(t =>
             //{
             //});
-            NPC(nameof(Size));
-            NPC(nameof(Formed));
-            NPC(nameof(AmILeader));
-            NPC(nameof(ShowDetails));
-            NPC(nameof(ShowLeaveButton));
-            NPC(nameof(AliveCount));
-            NPC(nameof(ReadyCount));
-            NPC(nameof(ShowLeaderButtons));
+            N(nameof(Size));
+            N(nameof(Formed));
+            N(nameof(AmILeader));
+            N(nameof(ShowDetails));
+            N(nameof(ShowLeaveButton));
+            N(nameof(AliveCount));
+            N(nameof(ReadyCount));
+            N(nameof(ShowLeaderButtons));
         }
         public void NotifySettingUpdated()
         {
             SettingsUpdated?.Invoke();
 
-            NPC(nameof(ShowDetails));
+            N(nameof(ShowDetails));
         }
         public bool Exists(ulong id)
         {
@@ -166,7 +167,7 @@ namespace TCC.ViewModels
                 // -- show only aggro stacks if we are in HH -- //
                 if (BossGageWindowViewModel.Instance.CurrentHHphase >= HarrowholdPhase.Phase2)
                 {
-                    if (ab.Id != 950023 && Settings.ShowOnlyAggroStacks) return;
+                    if (ab.Id != 950023 && Settings.SettingsHolder.ShowOnlyAggroStacks) return;
                 }
                 // -------------------------------------------- //
                 u.AddOrRefreshDebuff(ab, duration, stacks);
@@ -199,7 +200,7 @@ namespace TCC.ViewModels
         }
         public void AddOrUpdateMember(User p)
         {
-            if (Settings.IgnoreMeInGroupWindow && p.IsPlayer)
+            if (Settings.SettingsHolder.IgnoreMeInGroupWindow && p.IsPlayer)
             {
                 _leaderOverride = p.IsLeader;
                 return;
@@ -253,7 +254,7 @@ namespace TCC.ViewModels
             }
             SessionManager.SystemMessagesDatabase.Messages.TryGetValue(opcode, out var m);
             SystemMessagesProcessor.AnalyzeMessage(msg, m, opcode);
-            if(Proxy.IsConnected) Proxy.ForceSystemMessage(msg, opcode);
+            if (Proxy.Proxy.IsConnected) Proxy.Proxy.ForceSystemMessage(msg, opcode);
         }
         private void SendLeaveMessage(string name)
         {
@@ -283,7 +284,7 @@ namespace TCC.ViewModels
         }
         public void ClearAll()
         {
-            if (!Settings.GroupWindowSettings.Enabled || !Dispatcher.Thread.IsAlive) return;
+            if (!Settings.SettingsHolder.GroupWindowSettings.Enabled || !Dispatcher.Thread.IsAlive) return;
             Members.ToSyncArray().ToList().ForEach(x => x.ClearAbnormalities());
             Members.Clear();
             Raid = false;
@@ -325,8 +326,8 @@ namespace TCC.ViewModels
                 m.IsLeader = m.Name == name;
             }
             _leaderOverride = name == SessionManager.CurrentPlayer.Name;
-            NPC(nameof(AmILeader));
-            NPC(nameof(ShowLeaderButtons));
+            N(nameof(AmILeader));
+            N(nameof(ShowLeaderButtons));
         }
         public void StartRoll()
         {
@@ -340,10 +341,18 @@ namespace TCC.ViewModels
         public void SetRoll(ulong entityId, int rollResult)
         {
             if (rollResult == int.MaxValue) rollResult = -1;
-            var u = Members.ToSyncArray().FirstOrDefault(x => x.EntityId == entityId);
-            if (u == null) return;
-            u.RollResult = rollResult;
-            u.IsWinning = u.EntityId == GetWinningUser();
+            Members.ToSyncArray().ToList().ForEach(member =>
+            {
+                if (member.EntityId == entityId)
+                {
+                    member.RollResult = rollResult;
+                }
+                member.IsWinning = member.EntityId == GetWinningUser() && member.RollResult != -1;
+            });
+            //var u = Members.ToSyncArray().FirstOrDefault(x => x.EntityId == entityId);
+            //if (u == null) return;
+            //u.RollResult = rollResult;
+            //u.IsWinning = u.EntityId == GetWinningUser();
         }
         public void EndRoll()
         {
@@ -380,7 +389,7 @@ namespace TCC.ViewModels
             var user = Members.ToSyncArray().FirstOrDefault(u => u.PlayerId == p.PlayerId && u.ServerId == p.ServerId);
             if (user != null) user.Ready = p.Status;
             _firstCheck = false;
-            NPC(nameof(ReadyCount));
+            N(nameof(ReadyCount));
         }
         public void EndReadyCheck()
         {
@@ -421,14 +430,14 @@ namespace TCC.ViewModels
             u.MaxHp = p.MaxHP;
             u.MaxMp = p.MaxMP;
             u.Level = (uint)p.Level;
-            if(u.Alive && !p.Alive) SendDeathMessage(u.Name);
+            if (u.Alive && !p.Alive) SendDeathMessage(u.Name);
             u.Alive = p.Alive;
-            NPC(nameof(AliveCount));
+            N(nameof(AliveCount));
             if (!p.Alive) u.HasAggro = false;
         }
         public void NotifyThresholdChanged()
         {
-            NPC(nameof(Size));
+            N(nameof(Size));
         }
         public void UpdateMemberGear(S_SPAWN_USER p)
         {
@@ -444,10 +453,10 @@ namespace TCC.ViewModels
             var u = Members.ToSyncArray().FirstOrDefault(x => x.IsPlayer);
             if (u == null) return;
 
-            u.Weapon = InfoWindowViewModel.Instance.CurrentCharacter.Gear.FirstOrDefault(x => x.Piece == GearPiece.Weapon);
-            u.Armor = InfoWindowViewModel.Instance.CurrentCharacter.Gear.FirstOrDefault(x => x.Piece == GearPiece.Armor);
-            u.Gloves = InfoWindowViewModel.Instance.CurrentCharacter.Gear.FirstOrDefault(x => x.Piece == GearPiece.Hands);
-            u.Boots = InfoWindowViewModel.Instance.CurrentCharacter.Gear.FirstOrDefault(x => x.Piece == GearPiece.Feet);
+            u.Weapon = WindowManager.Dashboard.VM.CurrentCharacter.Gear.FirstOrDefault(x => x.Piece == GearPiece.Weapon);
+            u.Armor = WindowManager.Dashboard.VM.CurrentCharacter.Gear.FirstOrDefault(x => x.Piece == GearPiece.Armor);
+            u.Gloves = WindowManager.Dashboard.VM.CurrentCharacter.Gear.FirstOrDefault(x => x.Piece == GearPiece.Hands);
+            u.Boots = WindowManager.Dashboard.VM.CurrentCharacter.Gear.FirstOrDefault(x => x.Piece == GearPiece.Feet);
 
         }
         public void UpdateMemberLocation(S_PARTY_MEMBER_INTERVAL_POS_UPDATE p)

@@ -5,8 +5,9 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using TCC.Data;
+using TCC.Data.Chat;
+using TCC.Data.Pc;
 using TCC.Parsing.Messages;
 using TCC.Sniffing;
 using TCC.Tera.Data;
@@ -63,7 +64,7 @@ namespace TCC.Parsing
                 SystemMessageNamer = new OpCodeNamer(Path.Combine(BasicTeraData.Instance.ResourceDirectory, $"data/opcodes/smt_{message.Versions[0]}.txt"));
                 Factory = new MessageFactory(message.Versions[0], sysMsgNamer: SystemMessageNamer);
                 TeraSniffer.Instance.Connected = true;
-                Proxy.ConnectToProxy();
+                Proxy.Proxy.ConnectToProxy();
                 return;
             }
             Packets.Enqueue(obj);
@@ -102,18 +103,6 @@ namespace TCC.Parsing
         }
         public static void HandleDecreaseSkillCooldown(S_DECREASE_COOLTIME_SKILL p)
         {
-            //if (p.SkillId % 10 != 0) return;
-            //if (p.SkillId / 1000 == 260)
-            //{
-            //    if (p.SkillId % 10 == 0)
-            //    {
-            //        SkillManager.ChangeSkillCooldown(p.SkillId, p.Cooldown);
-            //    }
-            //    else
-            //    {
-            //        SkillManager.ChangeSkillCooldown(10100, p.Cooldown);
-            //    }
-            //}
             SkillManager.ChangeSkillCooldown(p.SkillId, p.Cooldown);
         }
 
@@ -134,7 +123,7 @@ namespace TCC.Parsing
             switch (SessionManager.CurrentPlayer.Class)
             {
                 case Class.Warrior:
-                    if (Settings.ClassWindowSettings.Enabled)
+                    if (Settings.Settings.ClassWindowSettings.Enabled)
                         ((WarriorBarManager)ClassWindowViewModel.Instance.CurrentManager).EdgeCounter.Val = p.Edge;
                     break;
                 case Class.Sorcerer:
@@ -152,7 +141,7 @@ namespace TCC.Parsing
             }
             else
             {
-                EntitiesManager.UpdateNPC(p.Target, p.CurrentHP, p.MaxHP);
+                EntityManager.UpdateNPC(p.Target, p.CurrentHP, p.MaxHP);
             }
             ChatWindowManager.Instance.AddDamageReceivedMessage(p.Source, p.Target, p.Diff, p.MaxHP);
         }
@@ -176,11 +165,11 @@ namespace TCC.Parsing
 
         public static void HandleGageReceived(S_BOSS_GAGE_INFO p)
         {
-            EntitiesManager.UpdateNPC(p.EntityId, p.CurrentHP, p.MaxHP, (ushort)p.HuntingZoneId, (uint)p.TemplateId);
+            EntityManager.UpdateNPC(p.EntityId, p.CurrentHP, p.MaxHP, (ushort)p.HuntingZoneId, (uint)p.TemplateId);
         }
         public static void HandleNpcStatusChanged(S_NPC_STATUS p)
         {
-            EntitiesManager.SetNPCStatus(p.EntityId, p.IsEnraged);
+            EntityManager.SetNPCStatus(p.EntityId, p.IsEnraged);
             if (p.Target == 0)
             {
                 BossGageWindowViewModel.Instance.UnsetBossTarget(p.EntityId);
@@ -208,7 +197,7 @@ namespace TCC.Parsing
             SessionManager.CurrentPlayer.ClearAbnormalities();
             //BuffBarWindowViewModel.Instance.Player.ClearAbnormalities();
             SkillManager.Clear();
-            EntitiesManager.ClearNPC();
+            EntityManager.ClearNPC();
             GroupWindowViewModel.Instance.ClearAll();
             /*---------------------------------*/
 
@@ -234,19 +223,19 @@ namespace TCC.Parsing
             SessionManager.CurrentPlayer.Class = p.CharacterClass;
             WindowManager.ReloadPositions();
             //S_IMAGE_DATA.LoadCachedImages(); //TODO: refactor this thing
-            if (Settings.ClassWindowSettings.Enabled) ClassWindowViewModel.Instance.CurrentClass = p.CharacterClass;
+            if (Settings.Settings.ClassWindowSettings.Enabled) ClassWindowViewModel.Instance.CurrentClass = p.CharacterClass;
             AbnormalityManager.SetAbnormalityTracker(p.CharacterClass);
             Server = BasicTeraData.Instance.Servers.GetServer(p.ServerId);
-            if (!Settings.StatSent) App.SendUsageStat();
-            Settings.LastRegion = Language;
-            TimeManager.Instance.SetServerTimeZone(Settings.LastRegion);
+            if (!Settings.Settings.StatSent) App.SendUsageStat();
+            Settings.Settings.LastRegion = Language;
+            TimeManager.Instance.SetServerTimeZone(Settings.Settings.LastRegion);
             TimeManager.Instance.SetGuildBamTime(false);
-            SessionManager.InitDatabases(Settings.LastRegion);
+            SessionManager.InitDatabases(Settings.Settings.LastRegion);
             SkillManager.Clear();
             if (Utils.ClassEnumToString(p.CharacterClass).ToLower() != "") //why????
                 CooldownWindowViewModel.Instance.LoadSkills(Utils.ClassEnumToString(p.CharacterClass).ToLower() + "-skills.xml", p.CharacterClass);
             WindowManager.FloatingButton.SetMoongourdButtonVisibility();
-            EntitiesManager.ClearNPC();
+            EntityManager.ClearNPC();
             GroupWindowViewModel.Instance.ClearAll();
 
             SessionManager.CurrentPlayer.ClearAbnormalities();
@@ -262,15 +251,15 @@ namespace TCC.Parsing
             SessionManager.CurrentPlayer.Level = p.Level;
             SessionManager.SetPlayerLaurel(SessionManager.CurrentPlayer);
             InfoWindowViewModel.Instance.SetLoggedIn(p.PlayerId);
-
-            if (Settings.LastRegion == "NA")
-                Task.Delay(20000).ContinueWith(t => ChatWindowManager.Instance.AddTccMessage(App.ThankYou_mEME));
+            SessionManager.GuildMembersNames.Clear();
+            //if (Settings.Settings.LastRegion == "NA")
+            //    Task.Delay(20000).ContinueWith(t => ChatWindowManager.Instance.AddTccMessage(App.ThankYou_mEME));
 
         }
 
         internal static void HandleLfgList(S_SHOW_PARTY_MATCH_INFO x)
         {
-            if (!Settings.LfgEnabled) return;
+            if (!Settings.Settings.LfgEnabled) return;
             if (WindowManager.LfgListWindow == null) return;
             if (WindowManager.LfgListWindow.VM == null) return;
             if (!x.IsLast) return;
@@ -294,7 +283,7 @@ namespace TCC.Parsing
                     target.LeaderName = l.LeaderName;
                     if (target.PlayerCount != l.PlayerCount)
                     {
-                        Proxy.RequestPartyInfo(l.LeaderId);
+                        Proxy.Proxy.RequestPartyInfo(l.LeaderId);
                     }
                 }
                 else WindowManager.LfgListWindow.VM.Listings.Add(l);
@@ -340,7 +329,7 @@ namespace TCC.Parsing
             SessionManager.CurrentPlayer.ClearAbnormalities();
             //BuffBarWindowViewModel.Instance.Player.ClearAbnormalities();
             SkillManager.Clear();
-            EntitiesManager.ClearNPC();
+            EntityManager.ClearNPC();
             GroupWindowViewModel.Instance.ClearAll();
 
         }
@@ -357,7 +346,7 @@ namespace TCC.Parsing
             BossGageWindowViewModel.Instance.CurrentHHphase = HarrowholdPhase.None;
             BossGageWindowViewModel.Instance.ClearGuildTowers();
             SessionManager.CivilUnrestZone = x.Zone == 152;
-            if (Settings.CivilUnrestWindowSettings.Enabled) WindowManager.CivilUnrestWindow.VM.NotifyTeleported();
+            if (Settings.Settings.CivilUnrestWindowSettings.Enabled) WindowManager.CivilUnrestWindow.VM.NotifyTeleported();
             //MessageFactory.Update(); already in CurrentHHphase set
 
             //GC.Collect();
@@ -380,7 +369,7 @@ namespace TCC.Parsing
 
         public static void HandleSpawnMe(S_SPAWN_ME p)
         {
-            EntitiesManager.ClearNPC();
+            EntityManager.ClearNPC();
             FlyingGuardianDataProvider.Stacks = 0;
             FlyingGuardianDataProvider.StackType = FlightStackType.None;
             FlyingGuardianDataProvider.InvokeProgressChanged();
@@ -396,12 +385,12 @@ namespace TCC.Parsing
         }
         public static void HandleSpawnNpc(S_SPAWN_NPC p)
         {
-            EntitiesManager.CheckHarrowholdMode(p.HuntingZoneId, p.TemplateId);
-            EntitiesManager.SpawnNPC(p.HuntingZoneId, p.TemplateId, p.EntityId, System.Windows.Visibility.Collapsed);
+            EntityManager.CheckHarrowholdMode(p.HuntingZoneId, p.TemplateId);
+            EntityManager.SpawnNPC(p.HuntingZoneId, p.TemplateId, p.EntityId, System.Windows.Visibility.Collapsed);
         }
         public static void HandleSpawnUser(S_SPAWN_USER p)
         {
-            EntitiesManager.SpawnUser(p.EntityId, p.Name);
+            EntityManager.SpawnUser(p.EntityId, p.Name);
             if (!GroupWindowViewModel.Instance.Exists(p.EntityId)) return;
 
             GroupWindowViewModel.Instance.UpdateMemberGear(p);
@@ -481,8 +470,8 @@ namespace TCC.Parsing
         {
             if (message.IndexOf('[') != -1 && message.IndexOf(']') != -1)
             {
-                author = message.Split(new[] { '[', ']' }, StringSplitOptions.RemoveEmptyEntries)[1];
-                message = message.Replace('[' + author + ']', "");
+            //    author = message.Split(new[] { '[', ']' }, StringSplitOptions.RemoveEmptyEntries)[1];
+             //   message = message.Replace('[' + author + ']', "");
             }
             if (author == "undefined") author = "System";
             if (!ChatWindowManager.Instance.PrivateChannels.Any(x => x.Id == channel && x.Joined))
@@ -714,7 +703,7 @@ namespace TCC.Parsing
                 WindowManager.FloatingButton.TooltipInfo.ShowGuildInvite = !x.HasGuild;
                 WindowManager.FloatingButton.TooltipInfo.ShowPartyInvite = !x.HasParty;
             }
-            if (!Proxy.IsConnected) return;
+            if (!Proxy.Proxy.IsConnected) return;
             WindowManager.FloatingButton.OpenPlayerMenu();
         }
 
@@ -748,27 +737,27 @@ namespace TCC.Parsing
 
         public static void HandleDespawnNpc(S_DESPAWN_NPC p)
         {
-            EntitiesManager.DespawnNPC(p.Target, p.Type);
+            EntityManager.DespawnNPC(p.Target, p.Type);
         }
         public static void HandleDespawnUser(S_DESPAWN_USER p)
         {
-            EntitiesManager.DepawnUser(p.EntityId);
+            EntityManager.DepawnUser(p.EntityId);
         }
 
         public static void HandleAbnormalityBegin(S_ABNORMALITY_BEGIN p)
         {
-            AbnormalityManager.BeginAbnormality(p.AbnormalityId, p.TargetId, p.Duration, p.Stacks);
+            AbnormalityManager.BeginAbnormality(p.AbnormalityId, p.TargetId, p.CasterId, p.Duration, p.Stacks);
             if (p.TargetId.IsMe()) FlyingGuardianDataProvider.HandleAbnormal(p);
 
-            if (!Settings.ClassWindowSettings.Enabled) return;
+            if (!Settings.Settings.ClassWindowSettings.Enabled) return;
             AbnormalityManager.CurrentAbnormalityTracker?.CheckAbnormality(p);
         }
         public static void HandleAbnormalityRefresh(S_ABNORMALITY_REFRESH p)
         {
-            AbnormalityManager.BeginAbnormality(p.AbnormalityId, p.TargetId, p.Duration, p.Stacks);
+            AbnormalityManager.BeginAbnormality(p.AbnormalityId, p.TargetId, p.TargetId, p.Duration, p.Stacks);
             if (p.TargetId.IsMe()) FlyingGuardianDataProvider.HandleAbnormal(p);
 
-            if (!Settings.ClassWindowSettings.Enabled) return;
+            if (!Settings.Settings.ClassWindowSettings.Enabled) return;
             AbnormalityManager.CurrentAbnormalityTracker?.CheckAbnormality(p);
         }
         public static void HandleAbnormalityEnd(S_ABNORMALITY_END p)
@@ -776,14 +765,14 @@ namespace TCC.Parsing
             if (!AbnormalityManager.EndAbnormality(p.TargetId, p.AbnormalityId)) return;
             if (p.TargetId.IsMe()) FlyingGuardianDataProvider.HandleAbnormal(p);
 
-            if (!Settings.ClassWindowSettings.Enabled) return;
+            if (!Settings.Settings.ClassWindowSettings.Enabled) return;
             AbnormalityManager.CurrentAbnormalityTracker?.CheckAbnormality(p);
         }
 
         public static void HandlePlayerLocation(C_PLAYER_LOCATION p)
         {
             if (BossGageWindowViewModel.Instance.CurrentHHphase != HarrowholdPhase.Phase1) return;
-            BossGageWindowViewModel.Instance.SelectDragon(EntitiesManager.CheckCurrentDragon(new System.Windows.Point(p.X, p.Y)));
+            BossGageWindowViewModel.Instance.SelectDragon(EntityManager.CheckCurrentDragon(new System.Windows.Point(p.X, p.Y)));
         }
         public static void HandlePartyMemberList(S_PARTY_MEMBER_LIST p)
         {
@@ -795,10 +784,10 @@ namespace TCC.Parsing
                 GroupWindowViewModel.Instance.AddOrUpdateMember(user);
 
             if (notifyLfg && WindowManager.LfgListWindow != null && WindowManager.LfgListWindow.VM != null) WindowManager.LfgListWindow.VM.NotifyMyLfg();
-            if (Proxy.IsConnected && Settings.LfgEnabled)
+            if (Proxy.Proxy.IsConnected && Settings.Settings.LfgEnabled && SessionManager.InGameUiOn)
             {
-                Proxy.RequestCandidates();
-                if (WindowManager.LfgListWindow != null) if (WindowManager.LfgListWindow.IsVisible) Proxy.RequestLfgList();
+                Proxy.Proxy.RequestCandidates();
+                if (WindowManager.LfgListWindow != null) if (WindowManager.LfgListWindow.IsVisible) Proxy.Proxy.RequestLfgList();
             }
         }
         public static void HandlePartyMemberLeave(S_LEAVE_PARTY_MEMBER p)
@@ -830,13 +819,13 @@ namespace TCC.Parsing
         public static void HandleLeaveParty(S_LEAVE_PARTY x)
         {
             GroupWindowViewModel.Instance.ClearAll();
-            if (Settings.LfgEnabled) WindowManager.LfgListWindow.VM.NotifyMyLfg();
+            if (Settings.Settings.LfgEnabled) WindowManager.LfgListWindow.VM.NotifyMyLfg();
 
         }
         internal static void HandleKicked(S_BAN_PARTY x)
         {
             GroupWindowViewModel.Instance.ClearAll();
-            if (Settings.LfgEnabled) WindowManager.LfgListWindow.VM.NotifyMyLfg();
+            if (Settings.Settings.LfgEnabled) WindowManager.LfgListWindow.VM.NotifyMyLfg();
 
         }
 
@@ -855,7 +844,7 @@ namespace TCC.Parsing
         public static void HandlePartyMemberInfo(S_PARTY_MEMBER_INFO packet)
         {
             ChatWindowManager.Instance.UpdateLfgMembers(packet);
-            if (!Settings.LfgEnabled) return;
+            if (!Settings.Settings.LfgEnabled) return;
 
             var lfg = WindowManager.LfgListWindow.VM.Listings.FirstOrDefault(listing => listing.LeaderId == packet.Id || packet.Members.Any(member => member.PlayerId == listing.LeaderId));
             if (lfg == null) return;
@@ -1086,6 +1075,53 @@ namespace TCC.Parsing
             const string opcode = "SMT_FIELD_EVENT_LEAVE";
             SessionManager.SystemMessagesDatabase.Messages.TryGetValue(opcode, out var m);
             SystemMessagesProcessor.AnalyzeMessage("", m, opcode);
+        }
+
+        public static void HandleUpdateNpcGuild(S_UPDATE_NPCGUILD p)
+        {
+            switch (p.Guild)
+            {
+                case NpcGuild.Vanguard:
+                    InfoWindowViewModel.Instance.CurrentCharacter.VanguardCredits = p.Credits;
+                    break;
+                case NpcGuild.Guardian:
+                    InfoWindowViewModel.Instance.CurrentCharacter.GuardianCredits = p.Credits;
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        public static void HandleNpcGuildList(S_NPCGUILD_LIST p)
+        {
+            if (!p.UserId.IsMe()) return;
+            InfoWindowViewModel.Instance.CurrentCharacter.VanguardCredits = p.NpcGuildList[(int) NpcGuild.Vanguard];
+            InfoWindowViewModel.Instance.CurrentCharacter.GuardianCredits = p.NpcGuildList[(int) NpcGuild.Guardian];
+        }
+
+        public static void HandleNotifyGuildQuestUrgent(S_NOTIFY_GUILD_QUEST_URGENT obj)
+        {
+            const string opcode = "SMT_GQUEST_URGENT_NOTIFY";
+            SessionManager.SystemMessagesDatabase.Messages.TryGetValue(opcode, out var m);
+            var questName = SessionManager.GuildQuestDatabase.GuildQuests[obj.QuestId].Title;
+            SessionManager.MonsterDatabase.TryGetMonster(obj.TemplateId, obj.ZoneId, out var npc);
+            var zone = SessionManager.MapDatabase.Names[obj.ZoneId];
+            var msg = $"@0\vquestName\v{questName}\vnpcName\v{npc.Name}\vzoneName\v{zone}";
+            SystemMessagesProcessor.AnalyzeMessage(msg, m, opcode);
+
+        }
+
+        public static void HandleChangeGuildChief(S_CHANGE_GUILD_CHIEF obj)
+        {
+            const string opcode = "SMT_GC_SYSMSG_GUILD_CHIEF_CHANGED";
+            SessionManager.SystemMessagesDatabase.Messages.TryGetValue(opcode, out var m);
+            SystemMessagesProcessor.AnalyzeMessage($"@0\vName\v{SessionManager.GetGuildMemberName(obj.PlayerId)}", m, opcode);
+        }
+
+        public static void HandleGuildMembersList(S_GUILD_MEMBER_LIST obj)
+        {
+            obj.GuildMembersList.ToList().ForEach(m => { SessionManager.GuildMembersNames[m.Key] = m.Value; });
+
         }
     }
 }

@@ -1,4 +1,6 @@
-﻿using TCC.Parsing.Messages;
+﻿using TCC.Data;
+using TCC.Data.Skills;
+using TCC.Parsing.Messages;
 using TCC.ViewModels;
 
 namespace TCC.ClassSpecific
@@ -8,9 +10,26 @@ namespace TCC.ClassSpecific
         private const int ManaBoostId = 500150;
         private const int FlameFusionIncreaseId = 502070;   // Equipoise-Flame
         private const int FrostFusionIncreaseId = 502071;   // Equipoise-Frost
-        private const int ArcaneFusionIncreaseId = 502071;  // Equipoise-Arcane
+        private const int ArcaneFusionIncreaseId = 502072;  // Equipoise-Arcane
 
+        private const int FireIceFusionId = 502021;
+        //private const int FireArcaneFusionId = 502030;
+        //private const int IceArcaneFusionId = 502040;
 
+        private static Skill _fireIceFusion;
+        //private static Skill _fireArcaneFusion;
+        //private static Skill _iceArcaneFusion;
+
+        public SorcererAbnormalityTracker()
+        {
+            var fireIceFusionAb = SessionManager.AbnormalityDatabase.Abnormalities[FireIceFusionId];
+            //var fireArcaneFusionAb = SessionManager.AbnormalityDatabase.Abnormalities[FireArcaneFusionId];
+            //var iceArcaneFusionAb = SessionManager.AbnormalityDatabase.Abnormalities[IceArcaneFusionId];
+
+            _fireIceFusion = new Skill(fireIceFusionAb, Class.Sorcerer);
+            //_fireArcaneFusion = new Skill(fireArcaneFusionAb, Class.Sorcerer);
+            //_iceArcaneFusion = new Skill(iceArcaneFusionAb, Class.Sorcerer);
+        }
         private static void CheckManaBoost(S_ABNORMALITY_BEGIN p)
         {
             if (ManaBoostId != p.AbnormalityId) return;
@@ -20,66 +39,87 @@ namespace TCC.ClassSpecific
         private static void CheckManaBoost(S_ABNORMALITY_REFRESH p)
         {
             if (ManaBoostId != p.AbnormalityId) return;
-            ((SorcererBarManager)ClassWindowViewModel.Instance.CurrentManager).ManaBoost.Buff.Refresh(p.Duration);
+            ((SorcererBarManager)ClassWindowViewModel.Instance.CurrentManager).ManaBoost.Buff.Refresh(p.Duration, CooldownMode.Normal);
 
         }
         private static void CheckManaBoost(S_ABNORMALITY_END p)
         {
             if (ManaBoostId != p.AbnormalityId) return;
-            ((SorcererBarManager)ClassWindowViewModel.Instance.CurrentManager).ManaBoost.Buff.Refresh(0);
+            ((SorcererBarManager)ClassWindowViewModel.Instance.CurrentManager).ManaBoost.Buff.Refresh(0, CooldownMode.Normal);
         }
 
         private static void CheckFusionBoost(S_ABNORMALITY_BEGIN p)
         {
             if (FlameFusionIncreaseId == p.AbnormalityId)
             {
-                ((SorcererBarManager)ClassWindowViewModel.Instance.CurrentManager).IsBoostFire = true;
+                SessionManager.SetSorcererElementsBoost(true, false, false);
             }
             else if (FrostFusionIncreaseId == p.AbnormalityId)
             {
-                ((SorcererBarManager)ClassWindowViewModel.Instance.CurrentManager).IsBoostFrost = true;
+                SessionManager.SetSorcererElementsBoost(false, true, false);
             }
             else if (ArcaneFusionIncreaseId == p.AbnormalityId)
             {
-                ((SorcererBarManager)ClassWindowViewModel.Instance.CurrentManager).IsBoostArcane = true;
+                SessionManager.SetSorcererElementsBoost(false, false, true);
             }
         }
-
         private static void CheckFusionBoost(S_ABNORMALITY_REFRESH p)
         {
             if (FlameFusionIncreaseId == p.AbnormalityId)
             {
-                ((SorcererBarManager)ClassWindowViewModel.Instance.CurrentManager).IsBoostFire = true;
+                SessionManager.SetSorcererElementsBoost(true, false, false);
             }
             else if (FrostFusionIncreaseId == p.AbnormalityId)
             {
-                ((SorcererBarManager)ClassWindowViewModel.Instance.CurrentManager).IsBoostFrost = true;
+                SessionManager.SetSorcererElementsBoost(false, true, false);
             }
             else if (ArcaneFusionIncreaseId == p.AbnormalityId)
             {
-                ((SorcererBarManager)ClassWindowViewModel.Instance.CurrentManager).IsBoostArcane = true;
+                SessionManager.SetSorcererElementsBoost(false, false, true);
             }
         }
-
         private static void CheckFusionBoost(S_ABNORMALITY_END p)
         {
-            if (FlameFusionIncreaseId == p.AbnormalityId)
+            if (FlameFusionIncreaseId == p.AbnormalityId || FrostFusionIncreaseId == p.AbnormalityId || ArcaneFusionIncreaseId == p.AbnormalityId)
             {
-                ((SorcererBarManager)ClassWindowViewModel.Instance.CurrentManager).IsBoostFire = false;
+                SessionManager.SetSorcererElementsBoost(false, false, false);
             }
-            else if (FrostFusionIncreaseId == p.AbnormalityId)
+        }
+        private static void CheckFusions(S_ABNORMALITY_BEGIN p)
+        {
+            if (FireIceFusionId == p.AbnormalityId)
             {
-                ((SorcererBarManager)ClassWindowViewModel.Instance.CurrentManager).IsBoostFrost = false;
+                StartPrecooldown(_fireIceFusion, p.Duration);
             }
-            else if (ArcaneFusionIncreaseId == p.AbnormalityId)
+            //else if (FireArcaneFusionId == p.AbnormalityId)
+            //{
+            //    StartPrecooldown(_fireArcaneFusion, p.Duration);
+            //}
+            //else if (IceArcaneFusionId == p.AbnormalityId)
+            //{
+            //    StartPrecooldown(_iceArcaneFusion, p.Duration);
+            //}
+        }
+        private static void CheckFusions(S_ABNORMALITY_END p)
+        {
+            if (FireIceFusionId == p.AbnormalityId)
             {
-                ((SorcererBarManager)ClassWindowViewModel.Instance.CurrentManager).IsBoostArcane = false;
+                ((SorcererBarManager)ClassWindowViewModel.Instance.CurrentManager).EndFireIcePre();
             }
+            //else if (FireArcaneFusionId == p.AbnormalityId)
+            //{
+            //    StartPrecooldown(_fireArcaneFusion, p.Duration);
+            //}
+            //else if (IceArcaneFusionId == p.AbnormalityId)
+            //{
+            //    StartPrecooldown(_iceArcaneFusion, p.Duration);
+            //}
         }
 
         public override void CheckAbnormality(S_ABNORMALITY_BEGIN p)
         {
             if (!p.TargetId.IsMe()) return;
+            CheckFusions(p);
             CheckManaBoost(p);
             CheckFusionBoost(p);
         }
@@ -94,6 +134,9 @@ namespace TCC.ClassSpecific
             if (!p.TargetId.IsMe()) return;
             CheckManaBoost(p);
             CheckFusionBoost(p);
+            CheckFusions(p);
         }
+
+
     }
 }

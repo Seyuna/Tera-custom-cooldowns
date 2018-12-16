@@ -1,6 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 using TCC.Data;
+using TCC.Data.Chat;
 
 namespace TCC.TemplateSelectors
 {
@@ -42,7 +43,7 @@ namespace TCC.TemplateSelectors
                     return SystemAuthorTemplate;
                 case ChatChannel.Private7:
                 case ChatChannel.Private8:
-                    if(m.Author == "System") return SystemAuthorTemplate;
+                    if(m.Author == "System" ||string.IsNullOrWhiteSpace(m.Author) || string.IsNullOrEmpty(m.Author)) return SystemAuthorTemplate;
                     return DefaultAuthorTemplate;
                 default:
                     return DefaultAuthorTemplate;

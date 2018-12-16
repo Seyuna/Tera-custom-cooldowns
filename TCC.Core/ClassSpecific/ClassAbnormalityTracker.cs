@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using TCC.Data;
+using TCC.Data.Skills;
 using TCC.Parsing.Messages;
 using TCC.ViewModels;
 
@@ -31,7 +32,7 @@ namespace TCC.ClassSpecific
         }
         protected static void StartPrecooldown(Skill sk, uint duration)
         {
-            CooldownWindowViewModel.Instance.AddOrRefresh(new SkillCooldown(sk, duration, CooldownType.Skill, CooldownWindowViewModel.Instance.GetDispatcher(), true, true));
+            CooldownWindowViewModel.Instance.AddOrRefresh(new Cooldown(sk, duration, CooldownType.Skill, CooldownMode.Pre));
         }
         protected ClassAbnormalityTracker()
         {

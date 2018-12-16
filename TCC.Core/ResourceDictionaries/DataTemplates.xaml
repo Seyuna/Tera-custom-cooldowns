@@ -1,48 +1,69 @@
-﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+﻿<ResourceDictionary x:Class="TCC.ResourceDictionaries.DataTemplates"
+                    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:ctrl="clr-namespace:TCC.Controls"
+                    xmlns:abnormalities="clr-namespace:TCC.Controls.Abnormalities"
+                    xmlns:chatCtrl="clr-namespace:TCC.Controls.Chat"
+                    xmlns:group="clr-namespace:TCC.Controls.Group"
+                    xmlns:npc="clr-namespace:TCC.Controls.NPCs"
+                    xmlns:skills="clr-namespace:TCC.Controls.Skills"
                     xmlns:data="clr-namespace:TCC.Data"
+                    xmlns:moongourd="clr-namespace:TCC.Moongourd"
                     xmlns:vm="clr-namespace:TCC.ViewModels"
-                    xmlns:chatCtrl="clr-namespace:TCC.Controls.ChatControls"
-                    xmlns:tcc="clr-namespace:TCC">
-
+                    xmlns:abnormalities1="clr-namespace:TCC.Data.Abnormalities"
+                    xmlns:skills1="clr-namespace:TCC.Data.Skills"
+                    xmlns:chat="clr-namespace:TCC.Data.Chat"
+                    xmlns:pc="clr-namespace:TCC.Data.Pc"
+                    xmlns:dashboard="clr-namespace:TCC.Controls.Dashboard">
+    <DataTemplate x:Key="RoundNormalSkill">
+        <skills:RoundSkillControl />
+    </DataTemplate>
+    <DataTemplate x:Key="SquareNormalSkill">
+        <skills:SquareSkillControl Margin="-2 -2 -2 0"/>
+    </DataTemplate>
+    <DataTemplate x:Key="RoundFixedSkill">
+        <skills:RoundFixedSkillControl/>
+    </DataTemplate>
+    <DataTemplate x:Key="SquareFixedSkill">
+        <skills:SquareFixedSkillControl/>
+    </DataTemplate>
     <DataTemplate x:Key="SquareAbnormality">
-        <ctrl:SquareAbnormalityIndicator HorizontalAlignment="Right" Size="32">
-            <ctrl:SquareAbnormalityIndicator.Resources>
+        <abnormalities:SquareAbnormalityIndicator HorizontalAlignment="Right" Size="32">
+            <abnormalities:SquareAbnormalityIndicator.Resources>
                 <Style TargetType="{x:Type Path}">
                     <Setter Property="FlowDirection" Value="RightToLeft"/>
                 </Style>
-            </ctrl:SquareAbnormalityIndicator.Resources>
-        </ctrl:SquareAbnormalityIndicator>
+            </abnormalities:SquareAbnormalityIndicator.Resources>
+        </abnormalities:SquareAbnormalityIndicator>
     </DataTemplate>
     <DataTemplate x:Key="RoundAbnormality">
-        <ctrl:RoundAbnormalityIndicator HorizontalAlignment="Right" Size="32">
-            <ctrl:RoundAbnormalityIndicator.Resources>
+        <abnormalities:RoundAbnormalityIndicator HorizontalAlignment="Right" Size="32">
+            <abnormalities:RoundAbnormalityIndicator.Resources>
                 <Style TargetType="{x:Type Path}">
                     <Setter Property="FlowDirection" Value="RightToLeft"/>
                 </Style>
-            </ctrl:RoundAbnormalityIndicator.Resources>
-        </ctrl:RoundAbnormalityIndicator>
+            </abnormalities:RoundAbnormalityIndicator.Resources>
+        </abnormalities:RoundAbnormalityIndicator>
     </DataTemplate>
     <DataTemplate x:Key="RoundPartyAbnormality">
-        <ctrl:RoundAbnormalityIndicator Size="28" DataContext="{Binding}"/>
+        <abnormalities:RoundAbnormalityIndicator Size="28" DataContext="{Binding}"/>
     </DataTemplate>
     <DataTemplate x:Key="SquarePartyAbnormality">
-        <ctrl:SquareAbnormalityIndicator Size="28" DataContext="{Binding}"/>
+        <abnormalities:SquareAbnormalityIndicator Size="28" DataContext="{Binding}"/>
     </DataTemplate>
     <DataTemplate x:Key="RoundRaidAbnormality">
-        <ctrl:RoundAbnormalityIndicator Size="20" DataContext="{Binding}"/>
+        <abnormalities:RoundAbnormalityIndicator Size="20" DataContext="{Binding}"/>
     </DataTemplate>
     <DataTemplate x:Key="SquareRaidAbnormality">
-        <ctrl:SquareAbnormalityIndicator Size="20" DataContext="{Binding}"/>
+        <abnormalities:SquareAbnormalityIndicator Size="20" DataContext="{Binding}"/>
     </DataTemplate>
     <DataTemplate x:Key="RoundBossAbnormality">
-        <ctrl:RoundAbnormalityIndicator Size="30" Margin="2" DataContext="{Binding}"/>
+        <abnormalities:RoundAbnormalityIndicator Size="30" Margin="2" DataContext="{Binding}"/>
     </DataTemplate>
     <DataTemplate x:Key="SquareBossAbnormality">
-        <ctrl:SquareAbnormalityIndicator Size="30" Margin="2" DataContext="{Binding}"/>
+        <abnormalities:SquareAbnormalityIndicator Size="30" Margin="2" DataContext="{Binding}"/>
     </DataTemplate>
-    <DataTemplate x:Key="SkillDataTemplate" DataType="data:Skill">
+    <DataTemplate x:Key="SkillDataTemplate" DataType="skills1:Skill">
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
@@ -53,7 +74,7 @@
                              StrokeThickness="1" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <Ellipse.Fill>
                     <ImageBrush
-                                ImageSource="{Binding IconName, Converter={StaticResource Converters.IconNameToPath}}" />
+                                ImageSource="{Binding IconName, Converter={StaticResource IconNameToPath}}" />
                 </Ellipse.Fill>
             </Ellipse>
             <TextBlock Grid.Column="1" Foreground="#9fff" Text="{Binding ShortName}"
@@ -71,14 +92,14 @@
                              StrokeThickness="1" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <Ellipse.Fill>
                     <ImageBrush
-                                ImageSource="{Binding IconName, Converter={StaticResource Converters.IconNameToPath}}" />
+                                ImageSource="{Binding IconName, Converter={StaticResource IconNameToPath}}" />
                 </Ellipse.Fill>
             </Ellipse>
             <TextBlock Grid.Column="1" Foreground="#9fff" Text="{Binding Name}"
                                VerticalAlignment="Center" Margin="5 0" />
         </Grid>
     </DataTemplate>
-    <DataTemplate x:Key="AbnormalityDataTemplate" DataType="data:Abnormality">
+    <DataTemplate x:Key="AbnormalityDataTemplate" DataType="abnormalities1:Abnormality">
         <Grid Background="Transparent" ToolTip="{Binding ToolTip}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
@@ -90,7 +111,7 @@
                              StrokeThickness="1" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <Ellipse.Fill>
                     <ImageBrush
-                                ImageSource="{Binding IconName, Converter={StaticResource Converters.IconNameToPath}}" />
+                                ImageSource="{Binding IconName, Converter={StaticResource IconNameToPath}}" />
                 </Ellipse.Fill>
             </Ellipse>
             <TextBlock Grid.Column="1" Foreground="#9fff" Text="{Binding Name}"
@@ -110,7 +131,7 @@
             <Grid.ToolTip>
                 <ToolTip Background="Transparent" BorderBrush="Transparent">
                     <Grid>
-                        <ctrl:AbnormalityToolTipControl AbnormalityName="{Binding Abnormality.Name}" 
+                        <abnormalities:AbnormalityToolTipControl AbnormalityName="{Binding Abnormality.Name}" 
                                                                     AbnormalityToolTip="{Binding Abnormality.ToolTip}"
                                                                     Id="{Binding Abnormality.Id}"/>
                     </Grid>
@@ -121,7 +142,7 @@
                              StrokeThickness="1" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <Ellipse.Fill>
                     <ImageBrush
-                                ImageSource="{Binding Abnormality.IconName, Converter={StaticResource Converters.IconNameToPath}}" />
+                                ImageSource="{Binding Abnormality.IconName, Converter={StaticResource IconNameToPath}}" />
                 </Ellipse.Fill>
             </Ellipse>
             <TextBlock Grid.Column="1" Foreground="#9fff" Text="{Binding Abnormality.Name}"
@@ -157,10 +178,67 @@
                                VerticalAlignment="Center" Margin="5 0" HorizontalAlignment="Right" />
         </Grid>
     </DataTemplate>
-    <DataTemplate x:Key="NormalSkillDataTemplate" DataType="data:SkillCooldown">
-        <ctrl:SkillIconControl/>
+    <!--Add My Abnormals Setting by HQ=======================================================-->
+    <DataTemplate x:Key="MyAbnormalitySelectorDataTemplate" DataType="vm:MyAbnormalityVM">
+        <Grid Background="Transparent" >
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="30" />
+                <ColumnDefinition Width="350" />
+                <ColumnDefinition Width="450" />
+                <ColumnDefinition Width="80" />
+            </Grid.ColumnDefinitions>
+            <Grid.ToolTip>
+                <ToolTip Background="Transparent" BorderBrush="Transparent">
+                    <Grid>
+                        <abnormalities:AbnormalityToolTipControl AbnormalityName="{Binding Abnormality.Name}" 
+                                                                    AbnormalityToolTip="{Binding Abnormality.ToolTip}"
+                                                                    Id="{Binding Abnormality.Id}"/>
+                    </Grid>
+                </ToolTip>
+            </Grid.ToolTip>
+            <Ellipse Width="30" Height="{Binding ElementName=icon, Path=ActualWidth}" x:Name="icon"
+                             Stroke="#7fff"
+                             StrokeThickness="1" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Ellipse.Fill>
+                    <ImageBrush
+                                ImageSource="{Binding Abnormality.IconName, Converter={StaticResource IconNameToPath}}" />
+                </Ellipse.Fill>
+            </Ellipse>
+            <TextBlock Grid.Column="1" Foreground="#9fff" Text="{Binding Abnormality.Name}"
+                               VerticalAlignment="Center" Margin="5 0" />
+            <ItemsControl ItemsSource="{Binding Classes}" Grid.Column="2" >
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <UniformGrid Rows="1"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Button Command="{Binding MyToggleCommand}" Width="30" HorizontalContentAlignment="Center"
+                                        VerticalContentAlignment="Center">
+                            <Path Data="{StaticResource SvgCheckCircle}" Fill="#fff"
+                                          Stretch="Uniform" Height="16" Width="16" VerticalAlignment="Center"
+                                          HorizontalAlignment="Center"></Path>
+                            <Button.Style>
+                                <Style BasedOn="{StaticResource ButtonContentOpacityStyle}" TargetType="Button">
+                                    <Setter Property="Opacity" Value=".1"></Setter>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Selected}" Value="True">
+                                            <Setter Property="Opacity" Value="1"></Setter>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <TextBlock Grid.Column="3" Foreground="#3fff" Text="{Binding Abnormality.Id}"
+                               VerticalAlignment="Center" Margin="5 0" HorizontalAlignment="Right" />
+        </Grid>
     </DataTemplate>
-    <DataTemplate x:Key="FixedSkillDataTemplate" DataType="data:FixedSkillCooldown">
+    <!--=====================================================================================-->
+    <DataTemplate x:Key="FixedSkillDataTemplateForConfig" DataType="skills1:Cooldown">
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
@@ -171,31 +249,37 @@
                              StrokeThickness="1" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <Ellipse.Fill>
                     <ImageBrush
-                                ImageSource="{Binding Skill.IconName, Converter={StaticResource Converters.IconNameToPath}}" />
+                                ImageSource="{Binding Skill.IconName, Converter={StaticResource IconNameToPath}}" />
                 </Ellipse.Fill>
             </Ellipse>
             <TextBlock Grid.Column="1" Foreground="#9fff" Text="{Binding Skill.ShortName}"
                                VerticalAlignment="Center" Margin="5 0" />
         </Grid>
     </DataTemplate>
-
-    <DataTemplate x:Key="SimpleTemplate" DataType="data:MessagePiece">
-        <ctrl:OutlinedTextBlock Fill="{Binding Color}"
-                                        Text="{Binding Text}" 
-                                        Cursor="{Binding Type, Converter={StaticResource Converters.MessageTypeToCursor}}"
-                                        Stroke="#9000"
-                                        StrokeThickness="3"
-                                        FontSize="{Binding Size}"
-                                FontFamily="{StaticResource NotoSansMed}"
-
-                                        TextWrapping="WrapWithOverflow"
-                                        FontWeight="DemiBold"
-                                        Opacity="1"
-                                        Width="Auto"
-                                        HorizontalAlignment="Stretch"
-                                        TextTrimming="None"
-                                        Margin="{Binding Spaces}"
-                                        />
+    <DataTemplate x:Key="SimpleTemplate" DataType="chat:MessagePiece">
+        <Grid>
+            <Border BorderBrush="{Binding Color}" 
+                    Visibility="{Binding IsHovered, Converter={StaticResource BooleanToVisibilityConverter}}"
+                    HorizontalAlignment="Stretch" 
+                    VerticalAlignment="Stretch"
+                     BorderThickness="0 0 0 2"
+                    />            
+            <ctrl:OutlinedTextBlock Fill="{Binding Color}"
+                                    Text="{Binding Text}" 
+                                    Cursor="{Binding Type, Converter={StaticResource MessageTypeToCursor}}"
+                                    Stroke="#9000"
+                                    StrokeThickness="3"
+                                    FontSize="{Binding Size}"
+                                    FontFamily="{StaticResource NotoSansMed}"
+                                    TextWrapping="WrapWithOverflow"
+                                    FontWeight="DemiBold"
+                                    Opacity="1"
+                                    Width="Auto"
+                                    HorizontalAlignment="Stretch"
+                                    TextTrimming="None"
+                                    Margin="{Binding Spaces}"
+                                />
+        </Grid>
     </DataTemplate>
     <DataTemplate x:Key="MoneyTemplate">
         <chatCtrl:MoneyMessagePiece />
@@ -221,13 +305,13 @@
     </DataTemplate>
 
     <!--Channel label templates-->
-    <DataTemplate x:Key="WhisperChannelLabelTemplate" DataType="data:ChatMessage">
+    <DataTemplate x:Key="WhisperChannelLabelTemplate" DataType="chat:ChatMessage">
         <Grid Height="12" Width="12" VerticalAlignment="Top" UseLayoutRounding="True">
             <Path Data="M12 8V4l8 8-8 8v-4H4V8z" Opacity=".7" 
                       Stretch="Uniform" VerticalAlignment="Center">
                 <Path.LayoutTransform>
                     <TransformGroup>
-                        <ScaleTransform CenterX="1" ScaleX="{Binding Channel, Converter={StaticResource Converters.WhisperDirectionToAngle}}"/>
+                        <ScaleTransform CenterX="1" ScaleX="{Binding Channel, Converter={StaticResource WhisperDirectionToAngle}}"/>
                     </TransformGroup>
                 </Path.LayoutTransform>
                 <Path.Style>
@@ -249,8 +333,8 @@
                                   Fill="#ff2b2b" Opacity=".7" Stretch="Uniform" VerticalAlignment="Center"/>
         </Grid>
     </DataTemplate>
-    <DataTemplate x:Key="DefaultChannelLabelTemplate" DataType="data:ChatMessage">
-        <TextBlock  Foreground="{Binding Channel, Converter={StaticResource Converters.ChatChannelToColor}}" 
+    <DataTemplate x:Key="DefaultChannelLabelTemplate" DataType="chat:ChatMessage">
+        <TextBlock  Foreground="{Binding Channel, Converter={StaticResource ChatChannelToColor}}" 
                         Opacity=".5" 
                         FontWeight="SemiBold" 
                         FontSize="11"
@@ -260,14 +344,14 @@
                         Visibility="Visible"
                         MinWidth="33"
                         Margin="0,-3,0,0"
-                        Text="{Binding Channel, Converter={StaticResource Converters.ChatChannelToName}}"
+                        Text="{Binding Channel, Converter={StaticResource ChatChannelToName}}"
             />
-                        <!--TextTrimming="CharacterEllipsis"-->
+        <!--TextTrimming="CharacterEllipsis"-->
 
     </DataTemplate>
-    <DataTemplate x:Key="EnchantChannelLabelTemplate" DataType="data:ChatMessage">
+    <DataTemplate x:Key="EnchantChannelLabelTemplate" DataType="chat:ChatMessage">
         <Grid>
-            <TextBlock  Foreground="{Binding Channel, Converter={StaticResource Converters.ChatChannelToColor}}" 
+            <TextBlock  Foreground="{Binding Channel, Converter={StaticResource ChatChannelToColor}}" 
                         Opacity=".8" 
                         FontWeight="DemiBold" 
                         FontSize="11"
@@ -279,23 +363,23 @@
                         TextTrimming="CharacterEllipsis"
                         MinWidth="33"
                         Margin="0,-1,0,0"
-                        Text="{Binding Channel, Converter={StaticResource Converters.ChatChannelToName}}"
+                        Text="{Binding Channel, Converter={StaticResource ChatChannelToName}}"
                                 />
             <Border Width="Auto"
                      Height="Auto"
                         CornerRadius="5"
                      Margin="4,-2,2,3"
                      Opacity=".3"
-                     Background="{Binding Channel, Converter={StaticResource Converters.ChatChannelToColor}}"
+                     Background="{Binding Channel, Converter={StaticResource ChatChannelToColor}}"
 
                      />
         </Grid>
     </DataTemplate>
 
     <!--Author label templates-->
-    <DataTemplate x:Key="DefaultAuthorTemplate" DataType="data:ChatMessage">
+    <DataTemplate x:Key="DefaultAuthorTemplate" DataType="chat:ChatMessage">
         <ctrl:OutlinedTextBlock  Margin="3,0,3,0" 
-                        Fill="{Binding Channel, Converter={StaticResource Converters.ChatChannelToColor}}" 
+                        Fill="{Binding Channel, Converter={StaticResource ChatChannelToColor}}" 
                         FontSize="{Binding Size}"
                         HorizontalAlignment="Stretch"
                         TextAlignment="Left"
@@ -313,12 +397,12 @@
                         />
 
     </DataTemplate>
-    <DataTemplate x:Key="SystemAuthorTemplate" DataType="data:ChatMessage">
+    <DataTemplate x:Key="SystemAuthorTemplate" DataType="chat:ChatMessage">
         <Ellipse Width="10"
                      Height="10"
                      Margin="2,3,2,4"
                      Opacity=".5"
-                     Fill="{Binding Channel, Converter={StaticResource Converters.ChatChannelToColor}}"
+                     Fill="{Binding Channel, Converter={StaticResource ChatChannelToColor}}"
                      />
     </DataTemplate>
     <DataTemplate x:Key="LfgTemplate">
@@ -327,66 +411,66 @@
 
     <!--NPC templates-->
     <DataTemplate x:Key="BossDataTemplate">
-        <ctrl:BossGage/>
+        <npc:BossGage/>
     </DataTemplate>
     <DataTemplate x:Key="MobDataTemplate">
-        <ctrl:SmallMobControl/>
+        <npc:SmallMobControl/>
     </DataTemplate>
     <DataTemplate x:Key="GuildTowerTemplate">
-        <ctrl:GuildTowerControl/>
+        <npc:GuildTowerControl/>
     </DataTemplate>
 
     <DataTemplate x:Key="DefaultEnemyWindowLayout">
-        <ctrl:DefaultEnemyWindowLayout/>
+        <npc:DefaultEnemyWindowLayout/>
     </DataTemplate>
     <DataTemplate x:Key="Phase1EnemyWindowLayout">
-        <ctrl:Phase1BossControl />
+        <npc:Phase1BossControl />
     </DataTemplate>
     <DataTemplate x:Key="Phase2EnemyWindowLayout">
-        <ctrl:Phase2BossControl />
+        <npc:Phase2BossControl />
     </DataTemplate>
     <DataTemplate x:Key="Phase2BEnemyWindowLayout">
-        <ctrl:Phase2BallistaBossControl />
+        <npc:Phase2BallistaBossControl />
     </DataTemplate>
     <DataTemplate x:Key="Phase3EnemyWindowLayout">
-        <ctrl:Phase3BossControl />
+        <npc:Phase3BossControl />
     </DataTemplate>
     <DataTemplate x:Key="Phase4EnemyWindowLayout">
-        <ctrl:Phase4BossControl />
+        <npc:Phase4BossControl />
     </DataTemplate>
     <DataTemplate x:Key="DragonIndicator">
-        <ctrl:DragonControl />
+        <npc:DragonControl />
     </DataTemplate>
 
     <DataTemplate x:Key="PartyDataTemplate">
-        <ctrl:PartyMember />
+        <group:PartyMember />
     </DataTemplate>
     <DataTemplate x:Key="RaidDataTemplate" >
-        <ctrl:RaidMember/>
+        <group:RaidMember/>
     </DataTemplate>
 
     <DataTemplate x:Key="FixedCooldownTemplate">
-        <ctrl:FixedSkillContainers/>
+        <skills:FixedSkillContainers/>
     </DataTemplate>
     <DataTemplate x:Key="NormalCooldownTemplate">
-        <ctrl:NormalSkillContainer/>
+        <skills:NormalSkillContainer/>
     </DataTemplate>
     <DataTemplate x:Key="TabSettingsTemplate">
         <chatCtrl:TabSettingControl/>
     </DataTemplate>
-    <DataTemplate x:Key="SimpleChatChannelTemplate" DataType="data:ChatChannelOnOff">
+    <DataTemplate x:Key="SimpleChatChannelTemplate" DataType="chat:ChatChannelOnOff">
         <Grid ToolTip="{Binding Channel}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
             <Ellipse Width="12" Height="12" Margin="4,0" VerticalAlignment="Center"
-                         Fill="{Binding Channel, Converter={StaticResource Converters.ChatChannelToColor}}"/>
+                         Fill="{Binding Channel, Converter={StaticResource ChatChannelToColor}}"/>
             <TextBlock Grid.Column="1" Style="{StaticResource DefaultTextStyle}" VerticalAlignment="Center"
-                           Foreground="#8fff" Text="{Binding Channel, Converter={StaticResource Converters.ChatChannelToName}}"></TextBlock>
+                           Foreground="#8fff" Text="{Binding Channel, Converter={StaticResource ChatChannelToName}}"></TextBlock>
         </Grid>
     </DataTemplate>
-    <DataTemplate  x:Key="MoongourdEncounterDataTemplate" DataType="tcc:MoongourdEncounter" >
+    <DataTemplate  x:Key="MoongourdEncounterDataTemplate" DataType="moongourd:MoongourdEncounter" >
         <Grid VerticalAlignment="Center">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="230"/>
@@ -412,5 +496,182 @@
             </Button>
         </Grid>
     </DataTemplate>
+
+    <DataTemplate x:Key="NameClassCharDataTemplate" DataType="pc:Character">
+        <Grid HorizontalAlignment="Stretch" ShowGridLines="False" Background="Transparent" Height="30">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Rectangle Fill="{Binding Class, Converter={StaticResource ClassToFill}}"  
+                       VerticalAlignment="Stretch" 
+                       HorizontalAlignment="Left" 
+                       StrokeThickness="0" 
+                       Width="4" 
+                       Margin="0 -1 0 0">
+                <Rectangle.Style>
+                    <Style TargetType="Shape">
+                        <Setter Property="Opacity" Value=".3"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsLoggedIn}" Value="True">
+                                <Setter Property="Opacity" Value="1"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Rectangle.Style>
+            </Rectangle>
+            <Rectangle VerticalAlignment="Stretch" HorizontalAlignment="Stretch" 
+                       Grid.ColumnSpan="3" StrokeThickness="0" Margin="0 -1 0 0">
+                <Rectangle.Fill>
+                    <LinearGradientBrush StartPoint="0 .7" EndPoint="1 3" >
+                        <GradientStop Offset=".3"  x:Name="StartGradient" Color="White"/>
+                                      <!--Color="{Binding Class, Converter={StaticResource ClassToFill}}"-->
+                        <GradientStop Offset=".9" Color="Transparent" 
+                                      />
+                                      <!--Color="{Binding Class,  Converter={StaticResource ClassToTransparentFill}}"-->
+                    </LinearGradientBrush>
+                </Rectangle.Fill>
+                <Rectangle.Style>
+                    <Style TargetType="Shape">
+                        <Setter Property="Opacity" Value="0"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsLoggedIn}" Value="True">
+                                <Setter Property="Opacity" Value=".08"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Rectangle.Style>
+            </Rectangle>
+            <Path Data="{Binding Class, Converter={StaticResource ClassToSvg}}" Width="20" Height="20" Margin="10 4 5 4" VerticalAlignment="Center"
+                      HorizontalAlignment="Center"/>
+            <TextBlock Text="{Binding Level}"
+                       Grid.Column="1"
+                       FontSize="9"
+                       Foreground="#5fff"
+                       TextAlignment="Center"
+                       VerticalAlignment="Top">
+                <TextBlock.RenderTransform>
+                    <TranslateTransform X="0" Y="2"></TranslateTransform>
+                </TextBlock.RenderTransform>
+            </TextBlock>
+            <TextBlock Text="{Binding ItemLevel}" 
+                       Grid.Column="1"
+                       VerticalAlignment="Center"
+                       FontSize="9"
+                       Width="15"
+                       Foreground="{Binding ItemLevelTier, Converter={StaticResource IlvlTierToColor}}"
+
+                       TextAlignment="Center">
+                <TextBlock.RenderTransform>
+                    <TranslateTransform X="0" Y="4"></TranslateTransform>
+                </TextBlock.RenderTransform>
+
+            </TextBlock>
+            <TextBlock Text="{Binding Name}" 
+                       Grid.Column="2" Margin="4 0 0 0" 
+                       Style="{StaticResource DefaultTextStyle}"
+                       VerticalAlignment="Center"
+                       FontSize="14"
+                       FontWeight="Thin"
+                       Foreground="#8fff"
+                       TextTrimming="CharacterEllipsis"
+                       Cursor="Hand"
+                       MouseLeftButtonDown="OnCharacterNameMouseLeftButtonDown"
+                       />
+        </Grid>
+    </DataTemplate>
+    <DataTemplate x:Key="NameClassCharDataTemplateWithVM" DataType="dashboard:CharacterViewModel">
+        <Grid HorizontalAlignment="Stretch" ShowGridLines="False" Background="Transparent" Height="30">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Rectangle Fill="{Binding Character.Class, Converter={StaticResource ClassToFill}}"  
+                       VerticalAlignment="Stretch" HorizontalAlignment="Left" 
+                         StrokeThickness="0" Width="4" Margin="0 -1 0 0">
+                <Rectangle.Style>
+                    <Style TargetType="Shape">
+                        <Setter Property="Opacity" Value=".3"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Character.IsLoggedIn}" Value="True">
+                                <Setter Property="Opacity" Value="1"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Rectangle.Style>
+            </Rectangle>
+            <Rectangle VerticalAlignment="Stretch" HorizontalAlignment="Stretch" 
+                       Grid.ColumnSpan="3" StrokeThickness="0" Margin="0 -1 0 0">
+                <Rectangle.Fill>
+                    <LinearGradientBrush StartPoint="0 .7" EndPoint="1 3" >
+                        <GradientStop Offset=".3"  x:Name="StartGradient" Color="White"/>
+                        <!--Color="{Binding Class, Converter={StaticResource ClassToFill}}"-->
+                        <GradientStop Offset=".9" Color="Transparent" 
+                                      />
+                        <!--Color="{Binding Class,  Converter={StaticResource ClassToTransparentFill}}"-->
+                    </LinearGradientBrush>
+                </Rectangle.Fill>
+                <Rectangle.Style>
+                    <Style TargetType="Shape">
+                        <Setter Property="Opacity" Value="0"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Character.IsLoggedIn}" Value="True">
+                                <Setter Property="Opacity" Value=".08"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Rectangle.Style>
+            </Rectangle>
+            <Rectangle VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Fill="#2ddf" 
+                       Grid.ColumnSpan="3" StrokeThickness="0" Margin="0 -1 0 0">
+                <Rectangle.Style>
+                    <Style TargetType="Shape">
+                        <Setter Property="Opacity" Value="0"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Hilight}" Value="True">
+                                <Setter Property="Opacity" Value=".2"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Rectangle.Style>
+            </Rectangle>
+            <Path Data="{Binding Character.Class, Converter={StaticResource ClassToSvg}}" Width="20" Height="20" Margin="10 4 5 4" VerticalAlignment="Center"
+                      HorizontalAlignment="Center"/>
+            <TextBlock Text="{Binding Character.Level}"
+                       Grid.Column="1"
+                       FontSize="9"
+                       Foreground="#5fff"
+                       TextAlignment="Center"
+                       VerticalAlignment="Top">
+                <TextBlock.RenderTransform>
+                    <TranslateTransform X="0" Y="2"></TranslateTransform>
+                </TextBlock.RenderTransform>
+            </TextBlock>
+            <TextBlock Text="{Binding Character.ItemLevel}" 
+                       Grid.Column="1"
+                       VerticalAlignment="Center"
+                       FontSize="9"
+                       Width="15"
+                       Foreground="{Binding Character.ItemLevelTier, Converter={StaticResource IlvlTierToColor}}"
+
+                       TextAlignment="Center">
+                <TextBlock.RenderTransform>
+                    <TranslateTransform X="0" Y="4"></TranslateTransform>
+                </TextBlock.RenderTransform>
+
+            </TextBlock>
+            <TextBlock Text="{Binding Character.Name}" 
+                           Grid.Column="2" Margin="4 0 0 0" 
+                           Style="{StaticResource DefaultTextStyle}"
+                           VerticalAlignment="Center"
+                           FontSize="14"
+                           FontWeight="Thin"
+                           Foreground="#8fff"
+                           TextTrimming="CharacterEllipsis"/>
+        </Grid>
+    </DataTemplate>
+
 
 </ResourceDictionary>

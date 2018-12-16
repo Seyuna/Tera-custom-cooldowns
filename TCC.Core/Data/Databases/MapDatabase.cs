@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Xml.Linq;
+using TCC.Data.Map;
 
 namespace TCC.Data.Databases
 {
@@ -68,9 +69,9 @@ namespace TCC.Data.Databases
 
         public bool TryGetGuardOrDungeonNameFromContinentId(uint continent, out string s)
         {
-            if (SessionManager.DungeonDatabase.DungeonDefs.ContainsKey(continent))
+            if (SessionManager.DungeonDatabase.Dungeons.ContainsKey(continent))
             {
-                s = SessionManager.DungeonDatabase.DungeonDefs[continent].Name;
+                s = SessionManager.DungeonDatabase.Dungeons[continent].Name;
                 return true;
             }
             var guard = Worlds[1].Guards.FirstOrDefault(x => x.Value.ContinentId == continent);
@@ -95,7 +96,7 @@ namespace TCC.Data.Databases
         //}
         private void LoadNames(string lang)
         {
-            var f = File.OpenText(Path.GetDirectoryName(typeof(App).Assembly.Location)+ $"/resources/data/regions/regions-{lang}.tsv");
+            var f = File.OpenText(Path.Combine(App.DataPath, $"regions/regions-{lang}.tsv"));
             while (true)
             {
                 var line = f.ReadLine();
@@ -116,7 +117,7 @@ namespace TCC.Data.Databases
         }
         public string GetName(uint guardId, uint sectionId)
         {
-            var ret = "Unknown;";
+            var ret = "Unknown";
             try
             {
                 Worlds.ToList().ForEach(w =>
@@ -133,6 +134,21 @@ namespace TCC.Data.Databases
                 // ignored
             }
             return ret;
+        }
+
+        public string GetDungeonGuardName(uint dungeonId)
+        {
+            var dungWorld = Worlds[9999];
+            var guardList = dungWorld.Guards.Values.ToList();
+            var guard = guardList.FirstOrDefault(x => x.Sections.ContainsKey(dungeonId));
+            if (guard == null) return "";
+            var openWorld = Worlds[1];
+
+            if (!openWorld.Guards.ContainsKey(guard.Id)) return "";
+
+            var nameId = openWorld.Guards[guard.Id].NameId;
+
+            return Names.ContainsKey(nameId) ? Names[nameId] : "";
         }
     }
 }

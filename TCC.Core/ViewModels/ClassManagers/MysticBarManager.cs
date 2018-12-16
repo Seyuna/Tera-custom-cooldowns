@@ -1,5 +1,6 @@
 ﻿using TCC.ClassSpecific;
 using TCC.Data;
+using TCC.Data.Skills;
 
 namespace TCC.ViewModels
 {
@@ -7,19 +8,19 @@ namespace TCC.ViewModels
     {
         private bool _elementalize;
         public AurasTracker Auras { get; private set; }
-        public FixedSkillCooldown Contagion { get; private set; }
+        public Cooldown Contagion { get; private set; }
         public DurationCooldownIndicator Vow { get; private set; }
         public DurationCooldownIndicator VolleyOfCurse { get; private set; }
-        public FixedSkillCooldown ThrallOfProtection { get; private set; }
-        public FixedSkillCooldown ThrallOfVengeance { get; private set; }
-        public FixedSkillCooldown ThrallOfWrath { get; private set; }
-        public FixedSkillCooldown ThrallOfLife { get; private set; }
-        public FixedSkillCooldown KingBlob { get; private set; }
+        public Cooldown ThrallOfProtection { get; private set; }
+        public Cooldown ThrallOfVengeance { get; private set; }
+        public Cooldown ThrallOfWrath { get; private set; }
+        public Cooldown ThrallOfLife { get; private set; }
+        public Cooldown KingBlob { get; private set; }
 
-        public FixedSkillCooldown AuraMerciless { get; private set; }
-        public FixedSkillCooldown AuraTenacious { get; private set; }
-        public FixedSkillCooldown AuraSwift { get; private set; }
-        public FixedSkillCooldown AuraUnyielding { get; private set; }
+        public Cooldown AuraMerciless { get; private set; }
+        public Cooldown AuraTenacious { get; private set; }
+        public Cooldown AuraSwift { get; private set; }
+        public Cooldown AuraUnyielding { get; private set; }
         public bool Elementalize
         {
             get => _elementalize;
@@ -27,8 +28,8 @@ namespace TCC.ViewModels
             {
                 if (_elementalize == value) return;
                 _elementalize = value;
-                NPC();
-                NPC(nameof(ElementalizeWarning));
+                N();
+                N(nameof(ElementalizeWarning));
             }
         }
         public bool ElementalizeWarning => !Elementalize && (SessionManager.Combat || SessionManager.Encounter);
@@ -56,31 +57,31 @@ namespace TCC.ViewModels
             SessionManager.SkillsDatabase.TryGetSkill(140500, Class.Mystic, out var asw);
             SessionManager.SkillsDatabase.TryGetSkill(150600, Class.Mystic, out var au);
 
-            ThrallOfProtection = new FixedSkillCooldown(top, false);
-            ThrallOfLife = new FixedSkillCooldown(tol, false);
-            ThrallOfVengeance = new FixedSkillCooldown(tov, true);
-            ThrallOfWrath = new FixedSkillCooldown(tow, true);
-            KingBlob = new FixedSkillCooldown(kb, true);
+            ThrallOfProtection = new Cooldown(top, false);
+            ThrallOfLife = new Cooldown(tol, false);
+            ThrallOfVengeance = new Cooldown(tov, true) { CanFlash = true };
+            ThrallOfWrath = new Cooldown(tow, true) { CanFlash = true };
+            KingBlob = new Cooldown(kb, true) { CanFlash = true };
 
-            AuraTenacious = new FixedSkillCooldown(at, false);
-            AuraMerciless = new FixedSkillCooldown(am, false);
-            AuraSwift = new FixedSkillCooldown(asw, false);
-            AuraUnyielding = new FixedSkillCooldown(au, false);
+            AuraTenacious = new Cooldown(at, false) { CanFlash = true };
+            AuraMerciless = new Cooldown(am, false) { CanFlash = true };
+            AuraSwift = new Cooldown(asw, false) { CanFlash = true };
+            AuraUnyielding = new Cooldown(au, false) { CanFlash = true };
 
-            Contagion = new FixedSkillCooldown(cont, true);
+            Contagion = new Cooldown(cont, true) { CanFlash = true };
 
             Vow = new DurationCooldownIndicator(Dispatcher)
             {
-                Buff = new FixedSkillCooldown(vow, false),
-                Cooldown = new FixedSkillCooldown(vow, false)
+                Buff = new Cooldown(vow, false),
+                Cooldown = new Cooldown(vow, false) { CanFlash = true }
             };
             Vow.Buff.Ended += OnVowBuffEnded;
             Vow.Buff.Started += OnVowBuffStarted;
 
             VolleyOfCurse = new DurationCooldownIndicator(Dispatcher)
             {
-                Buff = new FixedSkillCooldown(voc, false),
-                Cooldown = new FixedSkillCooldown(voc, false)
+                Buff = new Cooldown(voc, false),
+                Cooldown = new Cooldown(voc, false) { CanFlash = true }
             };
 
             ClassAbnormalityTracker.MarkingExpired += OnVocExpired;
@@ -89,6 +90,23 @@ namespace TCC.ViewModels
             SessionManager.CombatChanged += OnCombatChanged;
             SessionManager.EncounterChanged += OnCombatChanged;
             Auras.AuraChanged += CheckAurasWarning;
+        }
+
+        public override void Dispose()
+        {
+            ThrallOfVengeance.Dispose();
+            ThrallOfWrath.Dispose();
+            KingBlob.Dispose();
+
+            AuraTenacious.Dispose();
+            AuraMerciless.Dispose();
+            AuraSwift.Dispose();
+            AuraUnyielding.Dispose();
+
+            Contagion.Dispose();
+
+            Vow.Cooldown.Dispose();
+            VolleyOfCurse.Cooldown.Dispose();
         }
 
         private void CheckAurasWarning()
@@ -100,7 +118,7 @@ namespace TCC.ViewModels
         }
         private void OnCombatChanged()
         {
-            NPC(nameof(ElementalizeWarning));
+            N(nameof(ElementalizeWarning));
             CheckAurasWarning();
         }
 
@@ -108,32 +126,32 @@ namespace TCC.ViewModels
         private void OnVowBuffEnded(CooldownMode obj) => Vow.Cooldown.FlashOnAvailable = true;
         private void OnVocRefreshed(ulong duration)
         {
-            VolleyOfCurse.Buff.Refresh(duration);
+            VolleyOfCurse.Buff.Refresh(duration, CooldownMode.Normal);
             VolleyOfCurse.Cooldown.FlashOnAvailable = false;
         }
 
         private void OnVocExpired()
         {
-            VolleyOfCurse.Buff.Refresh(0);
+            VolleyOfCurse.Buff.Refresh(0, CooldownMode.Normal);
             VolleyOfCurse.Cooldown.FlashOnAvailable = true;
         }
 
 
-        public override bool StartSpecialSkill(SkillCooldown sk)
+        public override bool StartSpecialSkill(Cooldown sk)
         {
             if (sk.Skill.IconName == Contagion.Skill.IconName)
             {
-                Contagion.Start(sk.Cooldown);
+                Contagion.Start(sk.Duration);
                 return true;
             }
             if (sk.Skill.IconName == VolleyOfCurse.Cooldown.Skill.IconName)
             {
-                VolleyOfCurse.Cooldown.Start(sk.Cooldown);
+                VolleyOfCurse.Cooldown.Start(sk.Duration);
                 return true;
             }
             if (sk.Skill.IconName == Vow.Cooldown.Skill.IconName)
             {
-                Vow.Cooldown.Start(sk.Cooldown);
+                Vow.Cooldown.Start(sk.Duration);
                 return true;
             }
             //if (sk.Skill.IconName == ThrallOfProtection.Skill.IconName)
@@ -143,7 +161,7 @@ namespace TCC.ViewModels
             //}
             if (sk.Skill.IconName == ThrallOfVengeance.Skill.IconName)
             {
-                ThrallOfVengeance.Start(sk.Cooldown);
+                ThrallOfVengeance.Start(sk.Duration);
                 return true;
             }
             //if (sk.Skill.IconName == ThrallOfLife.Skill.IconName)
@@ -153,7 +171,7 @@ namespace TCC.ViewModels
             //}
             if (sk.Skill.IconName == ThrallOfWrath.Skill.IconName)
             {
-                ThrallOfWrath.Start(sk.Cooldown);
+                ThrallOfWrath.Start(sk.Duration);
                 return true;
             }
             //if (sk.Skill.IconName == KingBlob.Skill.IconName)

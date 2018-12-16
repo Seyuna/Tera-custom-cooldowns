@@ -1,4 +1,5 @@
 ﻿using TCC.Data;
+using TCC.Data.Skills;
 
 namespace TCC.ViewModels
 {
@@ -8,9 +9,22 @@ namespace TCC.ViewModels
 
         public DurationCooldownIndicator DeadlyGamble { get; set; }
         public Counter EdgeCounter { get; set; }
+        public Cooldown Swift { get; set; }
         public StanceTracker<WarriorStance> Stance { get; set; }
         public StatTracker TraverseCut { get; set; }
         //public StatTracker TempestAura { get; set; }
+        private bool _swiftProc;
+
+        public bool SwiftProc
+        {
+            get => _swiftProc;
+            set
+            {
+                if (_swiftProc == value) return; _swiftProc = value;
+                N();
+            }
+        }
+
         public WarriorBarManager()
         {
             EdgeCounter = new Counter(10, true);
@@ -19,24 +33,33 @@ namespace TCC.ViewModels
             Stance = new StanceTracker<WarriorStance>();
         }
 
-        public bool ShowEdge => Settings.WarriorShowEdge;
-        public bool ShowTraverseCut => Settings.WarriorShowTraverseCut;
-        public WarriorEdgeMode WarriorEdgeMode => Settings.WarriorEdgeMode;
+        public bool ShowEdge => Settings.SettingsHolder.WarriorShowEdge;
+        public bool ShowTraverseCut => Settings.SettingsHolder.WarriorShowTraverseCut;
+        public WarriorEdgeMode WarriorEdgeMode => Settings.SettingsHolder.WarriorEdgeMode;
 
         public sealed override void LoadSpecialSkills()
         {
             //Deadly gamble
-            DeadlyGamble = new DurationCooldownIndicator(Dispatcher);
             SessionManager.SkillsDatabase.TryGetSkill(200200, Class.Warrior, out var dg);
-            DeadlyGamble.Buff = new FixedSkillCooldown(dg, false);
-            DeadlyGamble.Cooldown = new FixedSkillCooldown(dg, true);
+            DeadlyGamble = new DurationCooldownIndicator(Dispatcher)
+            {
+                Buff = new Cooldown(dg, false),
+                Cooldown = new Cooldown(dg, true) { CanFlash = true }
+            };
+            var ab = SessionManager.AbnormalityDatabase.Abnormalities[21010];//21070 dfa
+            Swift = new Cooldown(new Skill(ab), false);
         }
 
-        public override bool StartSpecialSkill(SkillCooldown sk)
+        public override void Dispose()
+        {
+            DeadlyGamble.Cooldown.Dispose();
+        }
+
+        public override bool StartSpecialSkill(Cooldown sk)
         {
             if (sk.Skill.IconName == DeadlyGamble.Cooldown.Skill.IconName)
             {
-                DeadlyGamble.Cooldown.Start(sk.Cooldown);
+                DeadlyGamble.Cooldown.Start(sk.Duration);
                 return true;
             }
             return false;
